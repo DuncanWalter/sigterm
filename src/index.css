@@ -1,0 +1,13 @@
+/* @font-face{
+    font-family: Earth;
+    src: url(../static/roboto/Roboto-Regular.ttf);
+} */
+
+::-webkit-scrollbar {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #44444f;
+    border-radius: 4px;
+}

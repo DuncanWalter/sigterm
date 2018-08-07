@@ -1,0 +1,8 @@
+{
+    "rules": {
+        "strict": "error",
+        "no-use-before-define":"error",
+        "no-console": "warn",
+        "no-unused-expressions":"error",
+    }
+}

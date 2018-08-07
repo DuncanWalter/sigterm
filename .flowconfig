@@ -1,0 +1,18 @@
+[ignore]
+.*/node_modules/.*
+.*/scripts/.*
+.*/dist/.*
+
+[libs]
+./flowtyped/external
+./flow-typed
+
+[options]
+experimental.const_params=true
+module.use_strict=true
+emoji=true
+all=true
+module.name_mapper='.*\.\(svg\|png\|styl\|css\)$' -> 'external'
+module.name_mapper='.*/node_modules/.*' -> 'external'
+suppress_type=any
+module.system=haste
