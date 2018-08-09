@@ -1,19 +1,6 @@
 import * as React from 'react'
 import { Transducer } from './transducer'
 
-// let syntaxes = [
-//   [/([^#]+)/, (data, text) => text],
-//   [/#{([^}#]*)}/, (data, sub) => data[sub]],
-//   [/#\[([^\]#]*)]/, (data, sub) => <b style={{ color: '#e5bbef' }}>{sub}</b>],
-//   [/#<([^>#]*)>/, (data, icon) => <ico class={`fa ${icon}`} />],
-//   // [/{\[(.*)]}/, data => keyword => <i>{keyword}</i>],
-//   // [/{(.+)#(.*)#}/, data => (color, text) => <p style={{color}}>{text}</p>],
-// ]
-
-// let tokenizer = new RegExp(
-//   `(${syntaxes.map(([regex, __]) => regex.source).join('|')})`
-// )
-
 export class Keyword {
   readonly name: string
   readonly description: string | TextTemplate<null>
@@ -32,13 +19,30 @@ export class TextTemplate<T> {
   }
 }
 
+type Interpolation<T> =
+  | TextTemplate<T>
+  | number
+  | string
+  | Keyword
+  | ((data: T) => Interpolation<T>)
+
+function* resolveInterpolation<T>(interpolation: Interpolation<T>, data: T) {
+  if (typeof interpolation === 'string') {
+    return yield interpolation
+  } else if (typeof interpolation === 'number') {
+    return yield interpolation
+  } else if (interpolation instanceof Keyword) {
+    return yield <b>{interpolation.name}</b>
+  } else if (interpolation instanceof TextTemplate) {
+    return yield* interpolation.getText(data)
+  } else {
+    return yield* resolveInterpolation(interpolation(data), data)
+  }
+}
+
 export function template<T>(
   literals: TemplateStringsArray,
-  ...interpolations: (
-    | TextTemplate<T>
-    | string
-    | Keyword
-    | ((data: T) => never))[]
+  ...interpolations: (Interpolation<T>)[]
 ): TextTemplate<T> {
   return new TextTemplate(function*(data: T) {
     let index = 0
@@ -51,20 +55,7 @@ export function template<T>(
       }
       if (interpolations[index]) {
         finished = false
-        const token = interpolations[index]
-        if (typeof token === 'string') {
-          yield data[token]
-          break
-        } else if (token instanceof Keyword) {
-          yield <b>{token.name}</b>
-          break
-        } else if (token instanceof TextTemplate) {
-          yield* token.getText(data)
-          break
-        } else {
-          yield token(data)
-          break
-        }
+        yield* resolveInterpolation(interpolations[index], data)
       }
     }
     index += 1
