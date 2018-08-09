@@ -5,30 +5,30 @@ import { queryEnemy, upgrade } from '../utils'
 import { Creature } from '../../creatures/creature'
 import { template } from '../../utils/textTemplate'
 
-export const Strike = defineCard({
+export const Strike = defineCard<{ damage: number }>({
   type: 'Strike',
   title: 'Strike',
-  text: template`Deal ${damage} damage.`,
+  text: template`Deal ${card => card.damage} damage.`,
   color: '#dd2244',
 
-  energy: 1,
-  damage: 6,
+  data: {
+    energy: 1,
+    damage: 6,
+  },
 
-  async play(self, { game, resolver, actors, energy }) {
+  async play(card, { game, resolver, actors, energy }) {
     let target = await queryEnemy(game)
 
-    const action = new Damage({
-      actors,
-      target,
+    const { damage } = await resolver.processEvent(
+      Damage({
+        actors: [card, ...actors],
+        subject: target,
+        damage: card.damage,
+        tags: [targeted, blockable],
+      }),
+    )
 
-      damage: self.data.damage,
-
-      tags: [targeted, blockable],
-    })
-
-    await resolver.processEvent(action)
-
-    return { damage: action.data.damage, energy, ...self }
+    return { damage, energy }
   },
 })
 
