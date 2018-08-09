@@ -1,8 +1,6 @@
 import { defineCard } from '../card'
-import { Damage, targeted } from '../../events/damage'
-import { blockable } from '../../events/damage'
+import { Damage, targeted, blockable } from '../../events/damage'
 import { queryEnemy, upgrade } from '../utils'
-import { Creature } from '../../creatures/creature'
 import { template } from '../../utils/textTemplate'
 
 export const Strike = defineCard<{ damage: number }>({

@@ -16,13 +16,13 @@ import React from 'react'
 
 const playLoop = withGame(({ game }) => {
   console.log('looping?')
-  queryHand(game, true).then((card) => {
+  queryHand(game, true).then(card => {
     console.log(card)
     if (!resolver.processing && card) {
       resolver.enqueueEvents(
         new PlayCard(game.player, card, {
           from: game.hand,
-        })
+        }),
       )
     }
     playLoop({})
@@ -36,21 +36,21 @@ export const Battle = withGame(
       <Col shim>
         <Row style={{ flex: 3 }}>
           <Shim />
-          {[...game.allies, game.player].map((c) => (
+          {[...game.allies, game.player].map(c => (
             <div
-              onClick={(click) => dispatch(submitTarget(c.id))}
-              onMouseEnter={(event) => dispatch(setFocus(c))}
-              onMouseLeave={(event) => dispatch(unsetFocus(c))}
+              onClick={click => dispatch(submitTarget(c.id))}
+              onMouseEnter={event => dispatch(setFocus(c))}
+              onMouseLeave={event => dispatch(unsetFocus(c))}
             >
               <Creature creature={c} game />
             </div>
           ))}
           <Shim />
-          {[...game.enemies].map((c) => (
+          {[...game.enemies].map(c => (
             <div
-              onClick={(click) => dispatch(submitTarget(c.id))}
-              onMouseEnter={(event) => dispatch(setFocus(c))}
-              onMouseLeave={(event) => dispatch(unsetFocus(c))}
+              onClick={click => dispatch(submitTarget(c.id))}
+              onMouseEnter={event => dispatch(setFocus(c))}
+              onMouseLeave={event => dispatch(unsetFocus(c))}
             >
               <Creature creature={c} game />
             </div>
@@ -62,7 +62,10 @@ export const Battle = withGame(
           <Col shim style={{ textAlign: 'center' }}>
             <div>Energy: {game.player.energy}</div>
             <div>Draw Pile: {game.drawPile.size}</div>
-            <div>Hand Size: {game.hand.size}/10</div>
+            <div>
+              Hand Size: {game.hand.size}
+              /10
+            </div>
           </Col>
           <div style={{ flex: 3 }} />
           <Col shim style={{ textAlign: 'center' }}>
@@ -81,7 +84,7 @@ export const Battle = withGame(
         </Row>
       </Col>
     )
-  })
+  }),
 )
 
 const sty = {

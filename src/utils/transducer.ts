@@ -42,3 +42,13 @@ function* map<T, O>(iter: Iterable<T>, mapping: (item: T) => O): Iterable<O> {
     yield mapping(item)
   }
 }
+
+// export class EntityGroup<E extends Entity> extends Array {
+//   [index: number]: E
+//   constructor(...items: E[]) {
+//     super(...(items as any[]))
+//   }
+//   // TODO: map, filter, reducer out to a transducer
+//   // TODO: sort, remove, shuffle, add
+//   // TODO: declare types for includes, push, pop
+// }

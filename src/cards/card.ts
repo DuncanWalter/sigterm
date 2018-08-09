@@ -36,7 +36,9 @@ interface CardDefinition<Data extends BasicCardDefinitionData> {
   // TODO: Targeting and pre-play hooks
 }
 
-type Card<Data extends BasicCardDefinitionData> = Entity &
+export type Card<
+  Data extends BasicCardDefinitionData = BasicCardDefinitionData
+> = Entity &
   Data & {
     type: CardType
     energy: null | 'X' | number
