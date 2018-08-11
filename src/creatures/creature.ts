@@ -1,90 +1,66 @@
-import {
-  ListenerGroup,
-  ConsumerArgs,
-  ListenerType,
-} from '../events/listener'
-import { ID } from '../utils/entity'
-import { Effect, toListener, EffectType } from '../effects/effect'
-import { RemoveCreature } from '../events/destroyCreature'
-import { Listener } from '../events/listener'
-import { resolver } from '../events/eventResolver'
-import { Entity } from '../utils/entity'
+import { Effect } from '../effects/effect'
+import { Entity, asEntity } from '../utils/entity'
 import { randomSequence, Sequence } from '../utils/random'
+import { OpaqueType, tokenGenerator } from '../utils/opaqueType'
+import { TextTemplate } from '../utils/textTemplate'
+import { Behavior } from './behavior'
 
-export type CreatureType = string
+const creatureType = Symbol('CREATURE_TYPE')
+const createCreatureType = tokenGenerator(creatureType)
+interface CreatureType extends OpaqueType<typeof creatureType, string> {}
 
-export interface CreatureState {
-  type: CreatureType;
-  health: number;
-  maxHealth: number;
-  effects: Effect<Creature<any>>[];
-  seed: number;
+interface CreatureDefinition<Data extends object = {}> {
+  type: string
+
+  name: string | TextTemplate<Creature<Data>>
+  description: string | TextTemplate<Creature<Data>>
+  color: string
+  size: number
+
+  health: number
+
+  effects?: Effect[]
+  data: Data
 }
 
-export class Creature<D: Object = any> extends Entity<CreatureState & D> {
-  get effects(): Effect<any>[] {
-    return this.inner.effects
+export type Creature<Data extends object = {}> = Entity &
+  Data & {
+    type: CreatureType
+    currentHealth: number
+    maxHealth: number
+    effects: Effect[]
   }
 
-  get type(): CreatureType {
-    return this.inner.type
-  }
+const creatureDefinitions: Map<CreatureType, CreatureDefinition> = new Map()
 
-  set health(value: number) {
-    this.inner.health = Math.floor(
-      Math.max(0, Math.min(this.inner.maxHealth, value))
-    )
-  }
+// TODO: Creatures are associated with a random sequence
+// and need to be passed it as a param
+export function defineCreature<Data extends object>(
+  definition: CreatureDefinition<Data>,
+): () => Creature<Data> {
+  // TODO: implement effects
+  const { type, data, health /*effects*/ } = definition
+  const newCreatureType = createCreatureType(type)
+  creatureDefinitions.set(newCreatureType, definition)
 
-  get health(): number {
-    return this.inner.health
-  }
-
-  set maxHealth(value: number) {
-    this.inner.maxHealth = Math.floor(Math.max(0, value))
-  }
-  get maxHealth(): number {
-    return this.inner.maxHealth
-  }
-
-  get listener(): ListenerGroup {
-    return this.effects.map((effect) => toListener(this, effect))
-  }
-
-  get seed(): Sequence<number> {
-    const self = this
-    return {
-      next(): number {
-        let rand = randomSequence(self.inner.seed)
-        let ret = rand.next()
-        self.inner.seed = rand.last()
-        return ret
-      },
-      fork() {
-        return randomSequence(self.inner.seed)
-      },
-      last() {
-        return self.inner.seed
-      },
-    }
-  }
-
-  set seed(seed: Sequence<number>) {
-    this.inner.seed = seed.last()
-  }
-
-  stacksOf(effectType: EffectType | { +type: EffectType }): number {
-    let effects: Effect<Creature<>>[] = [...this.effects].filter((effect) => {
-      if (effectType instanceof Object) {
-        return effect.type === effectType.type
-      } else {
-        return effect.type === effectType
-      }
-    })
-    if (effects.length === 0) {
-      return 0
-    } else {
-      return effects[0].stacks
-    }
-  }
+  return {
+    [type]() {
+      const creature = asEntity(
+        Object.assign(
+          {
+            type: newCreatureType,
+            effects: [],
+            maxHealth: health,
+            currentHealth: health,
+          },
+          data,
+        ),
+      )
+      // TODO: implement effects
+      // if (effects) {
+      //   creature.effects.push(...effects.map(effect => cloneEntity(effect)))
+      // }
+      return creature
+    },
+  }[type]
 }

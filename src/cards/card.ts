@@ -1,4 +1,4 @@
-import { EventResolver } from '../events/eventResolver'
+import { Resolver } from '../events/resolver'
 import { Game } from '../game/battle/battleState'
 import { Effect } from '../effects/effect'
 import { TextTemplate } from '../utils/textTemplate'
@@ -11,7 +11,7 @@ interface CardType extends OpaqueType<typeof cardType, string> {}
 
 export interface PlayArgs {
   actors: Set<unknown>
-  resolver: EventResolver
+  resolve: Resolver['resolve']
   game: Game
   energy: number // energy actually spent to play, regardless of data cost
 }

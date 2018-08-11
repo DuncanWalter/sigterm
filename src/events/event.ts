@@ -7,6 +7,7 @@ import { Listener, reject } from './listener'
 import { EventResolver, resolver } from './eventResolver'
 import { tokenGenerator, OpaqueType } from '../utils/opaqueType'
 import { OrderedTokenContext } from '../utils/orderedTokenContext'
+import { Game } from '../game'
 
 const resolverHook = Symbol('RESOLVER_HOOK')
 const createResolverHook = tokenGenerator(resolverHook)
@@ -25,8 +26,8 @@ export function registerResolverHook(
 }
 
 export function sortByResolverHook(
-  consumers: (Listener<any, any> | Event<any, any>)[],
-): (Listener<any, any> | Event<any, any>)[] {
+  consumers: (Listener | Event)[],
+): (Listener | Event)[] {
   const ranks: number[] = resolverHookOrdering.getRanks(
     consumers.map(consumer => OpaqueType.unwrap(resolverHook, consumer.type)),
   )
@@ -35,10 +36,9 @@ export function sortByResolverHook(
     .map(([_, consumer]) => consumer)
 }
 
-function* zip<S extends Iterable<any>[]>(...streams: S) {
+function* zip<Iters extends Iterable<any>[]>(...streams: Iters) {
   const iters = streams.map(stream => stream[Symbol.iterator]())
   let done = false
-  let value
   while (!done) {
     const nexts = iters.map(iter => iter.next())
     done = nexts.every(({ done }) => done)
@@ -60,7 +60,7 @@ export interface ConsumerArgs<Subject, Data> {
   data: Data
   subject: Subject
   // TODO:
-  actors: Set<never>
+  actors: unknown[]
   resolver: EventResolver
   event: Event<Subject, Data>
   next: () => Promise<void>
@@ -88,7 +88,7 @@ interface EventFactory<Subject, Data> extends EventType<Subject, Data> {
     Data
 }
 
-export interface Event<Subject, Data> {
+export interface Event<Subject = unknown, Data = unknown> {
   actors: Set<unknown>
   subject: Subject
   tags: Set<unknown>

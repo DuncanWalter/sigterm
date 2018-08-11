@@ -82,7 +82,7 @@ interface ListenerFactory<Subject, Data, Config> extends ListenerType {
   (configuration: Config): Listener<Subject, Data>
 }
 
-export interface Listener<Subject, Data> {
+export interface Listener<Subject = unknown, Data = unknown> {
   consume: Consumer<Subject, Data>
   type: ListenerType
   header: Header<Subject, Data>
