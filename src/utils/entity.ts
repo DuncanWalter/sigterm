@@ -55,7 +55,9 @@ function mapProp(value: unknown, store: EntityStore) {
   if (value instanceof Array) {
     return value.map(child => mapProp(child, store))
   } else if (value instanceof Object) {
+    // @ts-ignore // TODO:
     serialize(value, store)
+    // @ts-ignore // TODO:
     return OpaqueType.unwrap(entityId, value.id)
   } else {
     return value

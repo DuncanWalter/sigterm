@@ -14,10 +14,10 @@ export const Strike = defineCard<{ damage: number }>({
     damage: 6,
   },
 
-  async play(card, { game, resolver, actors, energy }) {
+  async play(card, { game, resolve, actors, energy }) {
     let target = await queryEnemy(game)
 
-    const { damage } = await resolver.processEvent(
+    const { damage } = await resolve(
       Damage({
         actors: [card, ...actors],
         subject: target,

@@ -103,7 +103,7 @@ export function defineListener<S, D, C>({
   follows,
   header,
 }: ListenerDefinition<S, D, C>): ListenerFactory<S, D, C> {
-  const registeredType = registerResolverHook(type, follows, precedes)
+  const registeredType = registerResolverHook(type, consumer, follows, precedes)
   const Factory = {
     [type](config: C) {
       return Object.create(Factory.prototype, {
