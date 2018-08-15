@@ -1,23 +1,19 @@
-import React, { Children, Component } from 'react'
+import React, { Component, ComponentClass, RefObject } from 'react'
 
-type AnimatedProps<State, Initial = void> = {
-  throttle?: number,
-  update?: (state: Initial | State, delta: number) => State,
-  render: (state: Initial | State) => any,
-  state: Initial,
+type AnimatedProps<Comp = Component, Props = {}> = {
+  throttle?: number
+  Target: new (props: Props) => Comp
+  update: (this: Comp, delta: number) => void
+  innerProps: Props
 }
 
-type AnimatedState<State, Initial = void> = {
-  token: Symbol,
-  lastUpdate: number,
-  state: Initial,
+interface AnimatedState<Comp = Component> {
+  token: Symbol
+  lastUpdate: number
+  target: RefObject<Comp>
 }
 
-function animationLoop() {
-  requestAnimationFrame(animationLoop)
-}
-
-const registeredComponents: Map<Symbol, Animated<any>> = new Map()
+const registeredComponents: Map<Symbol, Animated> = new Map()
 
 function registerComponent(comp: Animated<any, any>) {
   registeredComponents.set(comp.state.token, comp)
@@ -29,41 +25,67 @@ function unregisterComponent(comp: Animated<any, any>) {
 
 function updateComponents() {
   const now = Date.now()
-  registeredComponents.forEach((comp: Animated<any, any>) => {
-    const { lastUpdate, state }: AnimatedState<any, any> = comp.state
-    const { update, throttle }: AnimatedProps<any, any> = comp.props
-    const delta = now - comp.state.lastUpdate
-    if (!throttle || throttle <= delta) {
+  registeredComponents.forEach((comp: Animated) => {
+    const { throttle, update }: AnimatedProps = comp.props
+    const { lastUpdate, target }: AnimatedState = comp.state
+    const delta = now - lastUpdate
+    if (target.current && (!throttle || throttle <= delta)) {
       comp.setState({
         lastUpdate: now,
-        state: update ? update(state, delta) : state,
       })
+      update.call(target.current, delta)
     }
   })
 }
 
-export class Animated<State: Object, Initial = void> extends Component<
-  AnimatedProps<State, Initial>,
-  AnimatedState<State, Initial>,
-> {
-  constructor(props: AnimatedProps<State, Initial>) {
+class Animated<
+  Comp extends Component<any, any> = Component,
+  Props = {}
+> extends Component<AnimatedProps<Comp, Props>, AnimatedState<Comp>> {
+  constructor(props: AnimatedProps<Comp, Props>) {
     super(props)
     this.state = {
       lastUpdate: Date.now(),
-      state: props.state,
-      token: Symbol('AnimatedToken'),
+      token: Symbol('ANIMATED_TOKEN'),
+      target: React.createRef(),
     }
   }
 
-  onComponentDidMount() {
+  shouldComponentUpdate(newProps: AnimatedProps<Comp, Props>) {
+    return newProps !== this.props
+  }
+
+  componentDidMount() {
     registerComponent(this)
   }
 
-  onComponentWillUnmount() {
+  componentWillUnmount() {
     unregisterComponent(this)
   }
 
   render() {
-    return this.props.render(this.state.state)
+    const { Target, innerProps } = this.props
+    const { target } = this.state
+    return <Target ref={target} {...innerProps} />
   }
+}
+
+;(function animationLoop() {
+  updateComponents()
+  requestAnimationFrame(animationLoop)
+})()
+
+export function animate<Props, State, Comp extends Component<Props, State>>(
+  Target: new (props: Props) => Comp,
+  update: (this: Comp, delta: number) => void,
+  throttle?: number,
+) {
+  return (props: Props) => (
+    <Animated<Comp, Props>
+      throttle={throttle}
+      Target={Target}
+      update={update}
+      innerProps={props}
+    />
+  )
 }

@@ -1,4 +1,4 @@
-import React, {
+import {
   Element,
   ChildrenArray,
   Component,
@@ -6,14 +6,13 @@ import React, {
   Children,
 } from 'react'
 
-type $Component = Component<any, any> | StatelessFunctionalComponent<any>
-
+// type $Component = Component<any, any> | StatelessFunctionalComponent<any>
 type CaseProps<T, C extends Element<any> | null | string> = {
   of?: T
   default?: boolean
   children: C
 }
-// TODO: add a function prop for rendering cases (for efficiency and reduced logic)
+
 export const Case = <T, C extends Element<any> | null | string>({
   of,
   children,
@@ -28,13 +27,12 @@ type SwitchProps<T, C> = {
   >
 }
 // TODO: add a pattern matching function to handle object props and object types
-export const Switch = <T, C>({ pattern, children }: SwitchProps<T, C>) => {
+export function Switch<T, C>({
+  pattern,
+  children,
+}: SwitchProps<T, C>): C | null {
   if (Array.isArray(children)) {
-    return (
-      children
-        .map(child => Switch({ children: child, pattern }))
-        .filter(i => i)[0] || null
-    )
+    return children.find(child => Switch({ children: child, pattern })) || null
   } else {
     if (children.props.default) {
       return children

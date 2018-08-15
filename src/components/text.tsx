@@ -1,4 +1,4 @@
-import React, { StatelessFunctionalComponent } from 'react'
+import * as React from 'react'
 import styled, { css } from 'styled-components'
 
 type TextSize = 'small' | 'medium' | 'large'
@@ -14,7 +14,7 @@ type TextProps = {
   link?: true
   plain?: true
   disabled?: boolean
-  children: string | string[]
+  children: string | string[] | undefined
 }
 
 type DefaultedTextProps = {
@@ -53,7 +53,7 @@ export function interpretTextProps(props: TextProps): DefaultedTextProps {
   return {
     size: getTextSize(props) || 'small',
     type: getTextType(props) || 'plain',
-    children: props.children,
+    children: props.children || '',
   }
 }
 
@@ -83,7 +83,7 @@ const size = css`
         return 'font-size: 2.4rem; margin: 16px;'
       }
       case 'large': {
-        return 'font-size: 4.2rem; margin: 24px;'
+        return 'font-size: 4.2rem; margin: 16px 24px 16px;'
       }
     }
   }};
@@ -95,9 +95,7 @@ const TextFrame = styled.div`
   ${() => type};
 `
 
-export const Text: StatelessFunctionalComponent<TextProps> = (
-  props: TextProps,
-) => {
+export const Text = (props: TextProps) => {
   const options = interpretTextProps(props)
-  return <TextFrame {...options}>{props.children}</TextFrame>
+  return <TextFrame {...options}>{options.children}</TextFrame>
 }

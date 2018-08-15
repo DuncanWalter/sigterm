@@ -1,4 +1,4 @@
-import React, { Element, StatelessFunctionalComponent } from 'react'
+import React from 'react'
 import styled, { css } from 'styled-components'
 
 import { Text } from './text'
@@ -88,22 +88,22 @@ const type = css`
   background-color: ${(props: DefaultedButtonProps) => {
     switch (props.type) {
       case 'primary':
-        return '#332211'
+        return '#88aa66'
       case 'secondary':
-        return '#112233'
+        return '#557799'
       case 'warning':
-        return '#113322'
+        return '#cc3366'
     }
   }};
   &:hover {
     background-color: ${(props: DefaultedButtonProps) => {
       switch (props.type) {
         case 'primary':
-          return '#0000ff'
+          return '#aacc88'
         case 'secondary':
-          return '#00ff00'
+          return '#7799aa'
         case 'warning':
-          return '#ff0000'
+          return '#ee5588'
       }
     }};
   }
@@ -115,6 +115,7 @@ const disabled = css`
 `
 
 const ButtonFrame = styled.div`
+  border-radius: 4px;
   display: inline-block;
   margin: 16px;
   ${() => size};

@@ -1,4 +1,5 @@
-import React, { Children, cloneElement } from 'react'
+import * as React from 'react'
+import { Children, cloneElement } from 'react'
 import { Button, getButtonSize } from './button'
 import { Text, getTextSize } from './text'
 
@@ -14,6 +15,9 @@ export const Inline = (props: InlineProps) => {
   const sizedChildren = Children.map(children, child => {
     switch (true) {
       case typeof child === 'string': {
+        return <Text size={textSize}>{child}</Text>
+      }
+      case typeof child === 'number': {
         return <Text size={textSize}>{child}</Text>
       }
       case child.type === Button: {
@@ -32,8 +36,9 @@ export const Inline = (props: InlineProps) => {
           return cloneElement(child, { size: textSize })
         }
       }
-      default:
+      default: {
         return child
+      }
     }
   })
 

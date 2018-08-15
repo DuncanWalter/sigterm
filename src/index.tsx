@@ -1,29 +1,22 @@
-import React from 'react'
+import * as React from 'react'
 import { render } from 'react-dom'
-// import { withState } from 'recompose'
-// import { Game } from './game/game'
-// import { loadModules } from './utils/module'
-// import { engine } from './engine'
 import styled from 'styled-components'
 
 import { Switch, Case } from './components/switch'
 import { Button } from './components/button'
 import { Text } from './components/text'
-// import { Menu } from './menu/menu'
-
-// import '../node_modules/font-awesome/css/font-awesome.min.css'
-// import './index.css'
-// import { Menu } from './menu/menu'
+import { TileWrapper, TileSection, TileHeader } from './components/tile'
+import { Responsive, Layout } from './components/responsive'
+import { Page } from './components/page'
+import { InteractionContext } from './components/interactive'
 
 console.log('Welcome to the Deck Dawdle client')
-
-// loadModules([engine])
 
 const Anchor = styled.div`
   overflow: hidden;
   width: 100vw;
   height: 100vh;
-  background-color: black;
+  background-color: #191923;
 
   /* display: flex; */
   /* font-size: 1.6rem; */
@@ -64,7 +57,7 @@ const Anchor = styled.div`
   if (anchorElement) {
     render(
       <Anchor>
-        <Button text="Press Me" onClick={() => alert('woot')} />
+        {/* <Button text="Press Me" onClick={() => alert('woot')} />
         <Button text="Press Me" primary onClick={() => alert('woot')} />
 
         <Button text="Press Me" large disabled onClick={() => alert('woot')} />
@@ -78,7 +71,22 @@ const Anchor = styled.div`
         </Text>
         <Text medium disabled>
           justRight
-        </Text>
+        </Text> */}
+
+        <Page>
+          <TileWrapper>
+            <TileHeader title="SIGTERM" />
+          </TileWrapper>
+          <TileWrapper>
+            <TileSection>
+              <Button primary text="New Game" />
+              <br />
+              <Button primary disabled text="Continue Game" />
+              <br />
+              <Button secondary text="Settings" />
+            </TileSection>
+          </TileWrapper>
+        </Page>
       </Anchor>,
       anchorElement,
     )

@@ -1,12 +1,11 @@
-import * as React from 'react'
+import React from 'react'
 
-type ContainerProps = { router?: Router, store?: Store } & (
+type ContainerProps<App> = { router?: Router; app?: App } & (
   | {
-      render: RenderFunction,
-      children: null,
+      render: RenderFunction
+      children: null
     }
-  | { children: ValidChildren, render: void }
-)
+  | { children: ValidChildren; render: void })
 
 type ContainerState = {}
 
