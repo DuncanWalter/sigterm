@@ -1,4 +1,4 @@
-type Tail<Ts extends any[]> = ((as: Ts) => any) extends ((
+type Tail<Ts extends any[]> = ((...as: Ts) => any) extends ((
   a: any,
   ...rest: infer U
 ) => any)
@@ -12,44 +12,68 @@ type Head<Ts extends any[]> = ((...as: Ts) => any) extends ((
   ? U
   : never
 
-type Unpack<T> = T extends { pack: infer U } ? U : never
+type Cons<H, Ts> = Ts extends any[]
+  ? ((first: H, ...rest: Ts) => any) extends ((...args: infer As) => any)
+    ? As
+    : never
+  : never
 
-interface TupleMapPack<Ts extends any[], M extends <U>(a: U) => any> {
-  pack: {
-    basis: []
-    value: Unpack<TupleMapPack<Tail<Ts>, M>> extends infer T
-      ? T extends any[]
-        ? ((a: Head<Ts>, ...rest: T) => any) extends ((...as: infer U) => any)
-          ? U
-          : never
-        : never
-      : never
-  }[Head<Ts> extends [] ? 'basis' : 'value']
-}
+type Unpack<T> = T extends (() => infer U) ? U : never
 
-type Cast<Tuple extends any[], Mapping extends <U>(a: U) => any> = Unpack<
-  TupleMapPack<Tuple, Mapping>
->
+// interface TupleMapPack<Ts extends any[], M extends <U>(a: U) => any> {
+//   pack: {
+//     basis: []
+//     value: Unpack<TupleMapPack<Tail<Ts>, M>> extends infer T
+//       ? T extends any[]
+//         ? ((a: Head<Ts>, ...rest: T) => any) extends ((...as: infer U) => any)
+//           ? U
+//           : never
+//         : never
+//       : never
+//   }[Head<Ts> extends [] ? 'basis' : 'value']
+// }
+
+// type Cast<Tuple extends any[], Mapping extends <U>(a: U) => any> = Unpack<
+//   TupleMapPack<Tuple, Mapping>
+// >
 
 type Instance<T> = T extends Iterable<infer U> ? U : never
 
-interface ZipPack<Ts extends Iterable<any>[]> {
-  pack: {
-    basis: []
-    value: Unpack<ZipPack<Tail<Ts>>> extends infer T
-      ? T extends any[]
-        ? ((a: Instance<Head<Ts>>, ...rest: T) => any) extends ((
-            ...as: infer U
-          ) => any)
-          ? U
-          : never
-        : never
-      : never
-  }[Head<Ts> extends [] ? 'basis' : 'value']
-}
+type ZipPack<Ts extends any[]> = {
+  basis: () => []
+  value: () => Cons<Instance<Head<Ts>>, Unpack<ZipPack<Tail<Ts>>>>
+}[Ts extends [] ? 'basis' : 'value']
 
-type Zip<Iters extends Iterable<any>[]> = Unpack<ZipPack<Iters>>
+type Zip<Iters extends Iterable<any>[]> = Unpack<ZipPack<Iters>>[]
 
-const a: Zip<[number[], string[]]> = [3, '']
+type ComposePair<A, B> = A extends ((a: infer X) => infer Y)
+  ? B extends (a: Y) => infer Z ? ((a: X) => Z) : 'TYPE_MISMATCH'
+  : 'NON_FUNCTION'
+
+type ComposePack<Ts extends any[]> = {
+  basis: () => Head<Ts>
+  value: () => ComposePair<Head<Ts>, Unpack<ComposePack<Tail<Ts>>>>
+}[Ts extends [any] ? 'basis' : 'value']
+
+type Compose<Iters extends any[]> = Unpack<ComposePack<Iters>>
 
 const b: Head<[number, string, object]> = 3
+const c: Tail<[number, string, object]> = ['2', {}]
+const r: Tail<[number]> = []
+const d: Cons<number, [string, object]> = [3, '2', {}]
+const e: Zip<[]> = []
+const f: Zip<[number[], string[]]> = [[3, ''], [4, 'aaaa']]
+const g: ComposePair<((a: number) => string), ((a: string) => object)> = (
+  a: number,
+) => ({})
+const h: Compose<[((a: number) => string)]> = (a: number) => 'a'
+const i: Compose<[((a: number) => string), ((a: string) => object)]> = (
+  a: number,
+) => ({})
+const j: Compose<
+  [
+    ((a: number) => string),
+    ((a: string) => object),
+    (a: object) => 'I made it!'
+  ]
+> = (a: number) => 'I made it!'

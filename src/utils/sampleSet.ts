@@ -1,4 +1,4 @@
-interface SampleSetNode<T = any, W = any, O = any> {
+export interface SampleSetNode<T = any, W = any, O = any> {
   add: (item: T, weight: W) => SampleSetNode<T, W, O>
   sample: (
     count: number,
