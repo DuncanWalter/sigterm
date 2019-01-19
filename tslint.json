@@ -1,0 +1,12 @@
+{
+  "extends": ["tslint-react", "tslint-config-prettier"],
+  "rules": {
+    "no-shadowed-variable": true,
+    "no-console": {
+      "severity": "error",
+      "options": ["log", "debug"]
+    },
+    "jsx-boolean-value": false,
+    "jsx-no-lambda": false
+  }
+}

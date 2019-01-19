@@ -1,20 +1,20 @@
-import type { Event } from '../events/event'
-import type { Creature } from '../creatures/creature'
+import { Event } from '../events/event'
+import { Creature } from '../creatures/creature'
 import { defineEvent } from './event'
 import { ConsumerArgs } from './listener'
 
 type Type = {
   data: {
-    healing: number,
-  },
-  subject: Creature<>,
+    healing: number
+  }
+  subject: Creature<>
 }
 
-export const Heal = defineEvent('heal', function*({
+export const Heal = defineEvent('heal', async function({
   data,
   subject,
   cancel,
-}: ConsumerArgs<Type>) {
+}) {
   data.healing = Math.floor(data.healing)
   if (data.healing <= 0) {
     cancel()

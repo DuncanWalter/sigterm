@@ -5,9 +5,9 @@ import { TextTemplate } from '../utils/textTemplate'
 import { Entity, asEntity } from '../utils/entity'
 import { OpaqueType, tokenGenerator } from '../utils/opaqueType'
 
-const cardType = Symbol('CARD_TYPE')
-const createCardType = tokenGenerator(cardType)
-interface CardType extends OpaqueType<typeof cardType, string> {}
+// const cardType = Symbol('CARD_TYPE')
+// const createCardType = tokenGenerator(cardType)
+// interface CardType extends OpaqueType<typeof cardType, string> {}
 
 export interface PlayArgs {
   actors: Set<unknown>

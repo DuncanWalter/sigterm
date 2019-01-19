@@ -10,14 +10,14 @@ function xorshift64(seed) {
 }
 
 export interface Sequence<T> {
-  fork: () => Sequence<T>;
-  next: () => T;
-  last: () => T;
+  fork: () => Sequence<T>
+  next: () => T
+  last: () => T
 }
 
 export function randomSequence(seed: number): Sequence<number> {
   let state: number = seed
-  let sequence = {}
+  let sequence = {} as Sequence<number>
   sequence.fork = () => randomSequence(state)
   sequence.next = () => (state = xorshift64(ring * state)) / ring
   sequence.last = () => state

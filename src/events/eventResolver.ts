@@ -1,151 +1,109 @@
-import { ResolverHook, sortByResolverHook } from './event'
-import { Listener } from './listener'
-import { State } from '../state'
-import { Game } from '../game/battle/battleState'
-import { ConsumerArgs, reject, EventContent } from './listener'
-import { LL } from '../utils/linkedList'
-import { topologicalSort } from '../utils/topologicalSort'
-import { getMaxListeners } from 'cluster'
-import { Entity } from '../utils/entity'
+import { orderEvents } from './orderEvents'
+import { Event } from './event'
+import { Dispatch } from '@dwalter/spider-store'
 
-export class EventResolver {
-  game: Game
-  processing: boolean
-  simulating: boolean
-  eventQueue: LL<Event<any>>
-  listeners: Map<unknown, Listener>
+// TODO: this logic seems convoluted, so it's worth taking a second look.
+// It may actually just be this hard, though...
 
-  constructor(game: Game) {
-    this.game = game
-    this.listeners = new Map()
-    this.processing = false
-    this.simulating = false
-    this.eventQueue = new LL()
-  }
+let simulating = 0
+let processing = null as null | Promise<void>
+let queue = [] as {
+  event: Event
+  resolve: (event: Event) => unknown
+}[]
 
-  processEvent<A extends Event<any>>(event: A): Promise<A> {
-    return processEvent(this, event)
-  }
+// TODO: allow this to return a promise which only resolves
+// when the queue empties.
+// TODO: allow the processingQueue to be paused and restarted
+async function processQueue(dispatch: Dispatch): Promise<void> {
+  return (
+    processing ||
+    (processing = new Promise(async resolveQueue => {
+      while (queue.length !== 0) {
+        const { event, resolve } = queue.pop()!
+        await dispatch(await processEvent(event))
+        resolve(event)
+      }
+      resolveQueue()
+      processing = null
+    }))
+  )
+}
 
-  processQueue(): Promise<void> {
-    return processQueue(this)
-  }
-
-  enqueueEvents(...events: Event<any>[]): void {
-    if (this.simulating) return
-    events.forEach(event => this.eventQueue.append(event))
-    if (!this.processing) this.processQueue()
-  }
-
-  pushEvents(...events: Event<any>[]): void {
-    if (this.simulating) return
-    events.reverse().forEach(event => this.eventQueue.push(event))
-    if (!this.processing) this.processQueue()
-  }
-
-  simulate<R>(use: (trap: EventResolver, game: Game) => R): R {
-    this.simulating = true
-    const r: R = use(this, this.game)
-    this.simulating = false
-    return r
-  }
-
-  addListeners(owner: unknown, listeners: Listener[]) {
-    this.listeners.set(owner, listeners)
-  }
-  removeListeners(owner: unknown) {
-    this.listeners.delete(owner)
+export function enqueueEvent<Subject, Data>(event: Event<Subject, Data>) {
+  if (simulating != 0) return () => Promise.resolve(event)
+  return async function(dispatch: Dispatch) {
+    const promise = new Promise<Event<Subject, Data>>(
+      resolve => (queue = [{ event, resolve }, ...queue]),
+    )
+    processQueue(dispatch)
+    return promise
   }
 }
 
-// function aggregate(
-//   ls: ListenerGroup,
-//   event: Event<any>,
-//   simulating: boolean,
-// ): LL<Listener<any>> {
-//   // $FlowFixMe
-//   if (ls[Symbol.iterator]) {
-//     // $FlowFixMe
-//     return [...ls].reduce((a: LL<Listener<any>>, ls: ListenerGroup) => {
-//       a.appendList(aggregate(ls, event, simulating))
-//       return a
-//     }, new LL())
-//   } else if (ls instanceof Listener) {
-//     let test = testListener(event, ls)
-//     if (test == 'Passed') {
-//       return new LL(ls)
-//     } else {
-//       if (!simulating) {
-//         // console.log(test, ls.id, ls.header)
-//       }
-//       return new LL()
-//     }
-//   } else {
-//     // $FlowFixMe
-//     return aggregate(ls.listener, event, simulating)
-//   }
-// }
-
-const processEvent = async function processEvent(
-  self: EventResolver,
-  event: Event<any>,
-): Promise<> {
-  const game = self.game
-
-  if (!self.simulating) {
-    console.log(event.id, event, game)
+export function pushEvent<Subject, Data>(event: Event<Subject, Data>) {
+  if (simulating != 0) return () => Promise.resolve(event)
+  return async function(dispatch: Dispatch) {
+    const promise = new Promise<Event<Subject, Data>>(resolve =>
+      queue.push({ event, resolve }),
+    )
+    processQueue(dispatch)
+    return promise
   }
+}
 
-  let activeListeners = [
-    sortByResolverHook([
+export function simulateEvent(event: Event) {
+  return async function(dispatch: Dispatch) {
+    simulating += 1
+    dispatch(await processEvent(event))
+    simulating -= 1
+    return event
+  }
+}
+
+export async function processEvent<Subject, Data>(event: Event<Subject, Data>) {
+  return async function fooBar(dispatch: Dispatch) {
+    // const game = self.game
+
+    if (simulating === 0) {
+      console.log(event.name, event /*game*/)
+    }
+
+    let executionQueue = orderEvents([
+      // TODO: how do I get the listeners through?
       ...this.listeners.values(),
       event,
       ...event.defaultListeners,
-    ]),
-  ]
+    ])
 
-  let index: number = -1
-  let active: boolean = true
+    let index: number = -1
+    let active: boolean = true
 
-  function cancel() {
-    active = false
-    if (!self.simulating) {
-      console.log('Cancelled event', event)
+    function cancel() {
+      active = false
+      if (simulating === 0) {
+        console.log('Cancelled event', event)
+      }
     }
-  }
 
-  async function next() {
-    while (++index < executionQueue.length && active) {
-      await executionQueue[index].consumer({
-        data: event.data,
-        next,
-        cancel,
-        resolver: self,
-        subject: event.subject,
-        actors: event.actors,
-        event,
-        game,
-      })
+    async function next() {
+      while (++index < executionQueue.length && active) {
+        await executionQueue[index].consumer({
+          data: event.data,
+          next,
+          cancel,
+          subject: event.subject,
+          actors: event.actors,
+          processEvent: async e => dispatch(await processEvent(e)),
+          pushEvent: async e => dispatch(pushEvent(e)),
+          enqueueEvent: async e => dispatch(enqueueEvent(e)),
+          simulateEvent: async e => dispatch(await simulateEvent(e)),
+          event,
+        })
+      }
     }
+
+    await next()
+    return event
   }
-  await next()
-  return event
 }
-
-const processQueue = async function processQueue(
-  self: EventResolver,
-): Promise<void> {
-  if (self.processing) return
-  self.processing = true
-  let next: Event<any>
-
-  while ((next = self.eventQueue.next())) {
-    await self.processEvent(next)
-    if (!self.simulating) {
-      // yield new Promise(resolve => setTimeout(resolve, 300))
-    }
-  }
-  self.processing = false
-}
-
-export const resolver = new EventResolver()

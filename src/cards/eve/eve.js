@@ -1,5 +1,4 @@
 import { CardLibrary } from '../cardLibrary'
-import { CardPool } from '../cardPool'
 import { PalmStrike } from './palmStrike'
 import { Needle, NeedleWithCache } from './needle'
 import { FightersStance } from './fightersStance'
@@ -22,6 +21,7 @@ import { Penetrate } from '../alonzo/penetrate'
 import { Exploit } from './exploit'
 import { SideChannel } from '../anansi/sideChannel'
 
+// ten thousand ticks - whenever a card is played, increase its (and all copies) damage by 2
 // momentum - every xth damage deal, gain energy
 // quick strike
 // add cleave?
@@ -43,24 +43,24 @@ let eve = new Character(
   'Eve',
   true,
   '#d31313',
-  'Espionage software designed by an intelligence agency to run with limited system resources on foreign machines. Excels at executing multi-pronged attacks, but lacks facilities for protecting sensitive data.'
+  'Espionage software designed by an intelligence agency to run with limited system resources on foreign machines. Excels at executing multi-pronged attacks, but lacks facilities for protecting sensitive data.',
 )
 
-eve.addCard(F, Strike, (card) => new DoubleStrike(), (card) => new PalmStrike())
+eve.addCard(F, Strike, card => new DoubleStrike(), card => new PalmStrike())
 
 eve.addCard(D, ChipShot)
 eve.addCard(D, FightersStance)
 eve.addCard(D, Needle, NeedleWithCache)
-eve.addCard(D, PalmStrike, (card) => new Exploit() /*, Improved*/)
+eve.addCard(D, PalmStrike, card => new Exploit() /*, Improved*/)
 eve.addCard(D, SideChannel) // TODO: look into replacing w/ cleave etc
 
 eve.addCard(C, Crack /*expense add cache, improved*/)
-eve.addCard(C, DoubleStrike, (card) => new TripleStrike())
+eve.addCard(C, DoubleStrike, card => new TripleStrike())
 eve.addCard(C, Encroach /*EncroachRedundancy, EnchroachImproved*/)
 eve.addCard(C, Expose /*ExposeSingleton, ExposeAll*/)
 eve.addCard(C, Flex, FlexPermanent, FlexImproved)
 
-eve.addCard(B, Exploit, (card) => new FlashOfSteel() /*  */)
+eve.addCard(B, Exploit, card => new FlashOfSteel() /*  */)
 eve.addCard(B, Penetrate /*improved*/)
 eve.addCard(B, Rampage /*With Default, Harder scaling*/)
 eve.addCard(B, Replay /*Hand, Improved*/)

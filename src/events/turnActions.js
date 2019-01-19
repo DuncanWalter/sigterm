@@ -1,4 +1,3 @@
-import type { Event } from './event'
 import { defineEvent } from './event'
 import { DrawCards } from './drawCards'
 import { TakeTurn } from './takeTurn'
@@ -21,8 +20,8 @@ export const StartTurn = defineEvent('startTurn', function*({
           quantity: -game.player.energy,
         },
         StartTurn,
-        drain
-      )
+        drain,
+      ),
     )
     yield resolver.processEvent(
       new BindEnergy(
@@ -32,11 +31,11 @@ export const StartTurn = defineEvent('startTurn', function*({
           quantity: 3, // TODO: is it important to track max energy? // game.player.maxEnergy
         },
         StartTurn,
-        fill
-      )
+        fill,
+      ),
     )
     yield resolver.processEvent(
-      new DrawCards(game.player, game.player, { count: 5 }, StartTurn)
+      new DrawCards(game.player, game.player, { count: 5 }, StartTurn),
     )
     for (let ally of [...game.allies]) {
       yield resolver.processEvent(new StartTurn(ally, ally, {}))
@@ -63,19 +62,19 @@ export const EndTurn = defineEvent('endTurn', function*({
     }
 
     resolver.enqueueEvents(
-      ...[...game.allies].map((ally) => new TakeTurn(ally, ally, {}))
+      ...[...game.allies].map(ally => new TakeTurn(ally, ally, {})),
     )
     resolver.enqueueEvents(
-      ...[...game.allies].map((ally) => new EndTurn(ally, ally, {}))
+      ...[...game.allies].map(ally => new EndTurn(ally, ally, {})),
     )
     resolver.enqueueEvents(
-      ...[...game.enemies].map((enemy) => new StartTurn(enemy, enemy, {}))
+      ...[...game.enemies].map(enemy => new StartTurn(enemy, enemy, {})),
     )
     resolver.enqueueEvents(
-      ...[...game.enemies].map((enemy) => new TakeTurn(enemy, enemy, {}))
+      ...[...game.enemies].map(enemy => new TakeTurn(enemy, enemy, {})),
     )
     resolver.enqueueEvents(
-      ...[...game.enemies].map((enemy) => new EndTurn(enemy, enemy, {}))
+      ...[...game.enemies].map(enemy => new EndTurn(enemy, enemy, {})),
     )
     resolver.enqueueEvents(new StartTurn(game.player, game.player, {}))
   }
