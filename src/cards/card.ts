@@ -1,82 +1,95 @@
-import { EventResolver } from '../events/eventResolver'
-import { Game } from '../game/battle/battleState'
-import { Effect } from '../effects/effect'
-import { TextTemplate } from '../utils/textTemplate'
-import { Entity, asEntity } from '../utils/entity'
-import { OpaqueType, tokenGenerator } from '../utils/opaqueType'
+import { Effect, SerializedEffect, hydrateEffect } from '../effects/effect'
+import { Dispatch } from '@dwalter/spider-store'
+import { ReactElement } from 'react'
 
-// const cardType = Symbol('CARD_TYPE')
-// const createCardType = tokenGenerator(cardType)
-// interface CardType extends OpaqueType<typeof cardType, string> {}
-
-export interface PlayArgs {
+export type PlayArgs<
+  Data extends BasicCardDefinitionData = BasicCardDefinitionData
+> = Data & {
   actors: Set<unknown>
-  resolver: EventResolver
-  game: Game
-  energy: number // energy actually spent to play, regardless of data cost
+  dispatch: Dispatch
+  energy: number
 }
 
 interface BasicCardDefinitionData {
-  energy?: 'X' | number
-  upgraded?: never
+  energy: 'X' | number | null
+  // keywords: Keyword[]
 }
 
 interface CardDefinition<Data extends BasicCardDefinitionData> {
-  type: string
-
-  title: string | TextTemplate<Card<Data>>
-  text: string | TextTemplate<Card<Data>>
+  title: ((data: Data) => ReactElement<any>)
+  text: ((data: Data) => ReactElement<any>)
   color: string
-
-  play: (card: Card<Data>, ctx: PlayArgs) => Promise<Partial<Card<Data>>>
-
-  effects?: Effect[]
+  effects: Effect[]
   data: Data
-
-  // TODO: Targeting and pre-play hooks
+  play(args: PlayArgs<Data>): Promise<Partial<Data>>
 }
 
-type Card<Data extends BasicCardDefinitionData> = Entity &
-  Data & {
-    type: CardType
-    energy: null | 'X' | number
-    upgraded: null | 'L' | 'R'
-    effects: Effect[]
+export interface Card<
+  Data extends BasicCardDefinitionData = BasicCardDefinitionData
+> extends CardDefinition<Data> {
+  id: number
+  name: string
+}
+
+interface SerializedCard<Data> {
+  id: number
+  name: string
+  effects: SerializedEffect[]
+  data: Data
+}
+
+const cards = new Map<
+  string,
+  (data: any, effects?: SerializedEffect[]) => Card<any>
+>()
+
+export function defineCard<Data extends BasicCardDefinitionData>(
+  name: string,
+  {
+    title,
+    text,
+    color,
+    data: defaultData,
+    play: playCard,
+    effects: defaultEffects,
+  }: CardDefinition<Data>,
+): () => Card<Data> {
+  const prototype = {
+    title,
+    text,
+    color,
+    // TODO:
+    play(this: Card<Data>, playArgs: PlayArgs<Data>) {
+      return playCard({
+        ...this.data,
+        ...playArgs,
+      })
+    },
   }
 
-const cardDefinitions: Map<CardType, CardDefinition<any>> = new Map()
-
-export function defineCard<Data>(
-  definition: CardDefinition<Data & BasicCardDefinitionData>,
-): () => Card<Data> {
-  // TODO: implement effects
-  const { type, data /*effects*/ } = definition
-  const newCardType = createCardType(type)
-  cardDefinitions.set(newCardType, definition)
-
-  return {
-    [type]() {
-      const card = asEntity(
-        Object.assign(
-          { type: newCardType },
-          { effects: [], energy: null, upgraded: null },
-          data,
-        ),
-      )
-      // TODO: implement effects
-      // if (effects) {
-      //   card.effects.push(...effects.map(effect => cloneEntity(effect)))
-      // }
+  const factory = {
+    [name](data: Partial<Data> = {}, effects?: SerializedEffect[]) {
+      const card = Object.create(prototype)
+      Object.assign(card, {
+        name,
+        id: createId(),
+        data: { ...defaultData, data },
+        effects: (effects || defaultEffects).map(hydrateEffect),
+      })
       return card
     },
-  }[type]
+  }[name]
+
+  cards.set(name, factory)
+
+  return factory
 }
 
-export async function playCard<Data>(
-  card: Card<Data>,
-  ctx: PlayArgs,
-): Promise<Data> {
-  const definition: CardDefinition<Data> = cardDefinitions.get(card.type)!
-  const playData = await definition.play(card, ctx)
-  return Object.assign({}, card, playData)
+export function hydrateCard<Data extends BasicCardDefinitionData>(
+  card: SerializedCard<Data>,
+) {
+  const factory = cards.get(card.name)! // TODO: fallback card
+  return factory(card.data, card.effects)
 }
+
+export const cloneCard = hydrateCard

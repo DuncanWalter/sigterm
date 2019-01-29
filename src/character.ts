@@ -2,20 +2,8 @@
 // import type { Pragma } from './pragmas/pragma'
 // import { Sequence } from './utils/random'
 import { CardPool } from './cards/cardPool'
-import { tokenGenerator, OpaqueType } from './utils/opaqueType'
-
-const characterName = Symbol('CHARACTER_NAME')
-const registerCharacterName = tokenGenerator(characterName)
-export interface CharacterName
-  extends OpaqueType<typeof characterName, string> {}
-
-export type Upgrade = (upgraded: void | 'L' | 'R') => void | Card<any>
 
 export const characters: Map<CharacterName, Character> = new Map()
-
-function any(any: any): any {
-  return any
-}
 
 export class Character {
   color: string

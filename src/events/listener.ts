@@ -1,13 +1,13 @@
-import { Consumer, Event } from './event'
+import { Consumer, Event, EventFactory } from './event'
 import { declareEventDependency } from './orderEvents'
 
 interface ListenerFactory<Subject, Data, Config> {
   (config: Config): Listener<Subject, Data>
 }
 
-export interface Header<Subject> {
+export interface Header<Subject, Data> {
   tags?: unknown[]
-  type?: unknown
+  type: EventFactory<Subject, Data>
   filter?: (event: Event<any, any>) => boolean
   actor?: unknown
   subject?: Subject
@@ -16,7 +16,7 @@ export interface Header<Subject> {
 export interface Listener<Subject = any, Data = any> {
   type: unknown
   name: string
-  header: Header<Subject>
+  header: Header<Subject, Data>
   consumer: Consumer<Subject, Data>
 }
 
@@ -25,7 +25,7 @@ export function testListener(
   listener: Listener<any, any>,
 ): string {
   let matched = false
-  const h: Header<any> = listener.header
+  const h: Header<any, any> = listener.header
   if (h.type) {
     if ((h.type || h.type) === event.type) {
       matched = true
@@ -67,7 +67,7 @@ export function testListener(
 export function defineListener<Subject, Data, Config>(
   name: string,
   consumer: Consumer<Subject, Data>,
-  header: ((config: Config) => Header<Subject>) | Header<Subject>,
+  header: ((config: Config) => Header<Subject, Data>) | Header<Subject, Data>,
   precedes: unknown[],
   follows: unknown[],
 ): ListenerFactory<Subject, Data, Config> {

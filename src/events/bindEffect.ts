@@ -1,5 +1,5 @@
 import { defineEvent } from './event'
-import { Effect } from '../effects/effect'
+import { Effect, hydrateEffect } from '../effects/effect'
 
 export const bindEffect = defineEvent<
   { effects: Effect[] },

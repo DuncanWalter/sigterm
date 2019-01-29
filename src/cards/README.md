@@ -1,5 +1,16 @@
 # Characters
 
+poison mechanic
+
+vuln => take 50% more damage
+hard => take 33% less damage
+weakness => deal 25% less damage
+feable => take x additional damage / poison from external sources this turn
+
+strength => deal x more damage
+agility => gain x more block
+fragile => gain 25% less block
+
 ## Cards
 
 // TODO: Combine ranged and first strike

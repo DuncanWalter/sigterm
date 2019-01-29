@@ -6,8 +6,7 @@ import { Duplicate } from './duplicate'
 import { SideChannel } from './sideChannel'
 
 // guile- whenever you draw a status card, draw another card
-// metastisize- whenever a card is destroyed, gain 2 redundancy
-// draw, play, and destroy a card at no cost. ( gain energy = to cost, or card cost 0? )
+// metastisize- whenever a card is destroyed, gain 2 redundancy/block
 //
 //
 
@@ -22,6 +21,9 @@ import { SideChannel } from './sideChannel'
 //
 // this turn, all cards cost 0 and destroy on play. lose energy on draw.
 // add a burn to discard, draw 2 cards
+
+// Add a copy of the next card to be deleted to your discard pile
+// The next card you play costs 0. Delete after playing.
 
 //
 // destroy a card. gain energy equal to it's cost.

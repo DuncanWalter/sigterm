@@ -31,12 +31,12 @@ interface Appearance {
 
 const effects = new Map<string, (stacks: number) => Effect>()
 
-function hydrateEffect({ name, stacks }: SerializedEffect): Effect {
+export function hydrateEffect({ name, stacks }: SerializedEffect): Effect {
   const factory = effects.get(name) || fallback
   return factory(stacks)
 }
 
-export function defineEffect<Owner>(
+export function defineEffect<Owner, Data>(
   name: string,
   config: {
     appearance?: Appearance
@@ -47,22 +47,24 @@ export function defineEffect<Owner>(
   // TODO: Create tick listener factory
   if (config.stackBehavior) {
     const { min, max, delta, stacked, on } = config.stackBehavior
-    const listenerFactory = defineListener<Owner, unknown, Owner>(
+    const listenerFactory = defineListener<Owner, Data, Owner>(
       `@effect/${name}/stack-behavior`,
-      async ({ subject }) => {
+      async ({ subject, dispatch }) => {
         const stacks = subject.stacksOf(name)
         const change = delta(stacks) - stacks
         if (change) {
-          await processEvent(
-            bindEffect(
-              owner,
-              owner,
-              {
-                name,
-                stacks: change,
-              },
-              { type: tick },
-              def.effectFactory,
+          await dispatch(
+            processEvent(
+              bindEffect(
+                owner,
+                owner,
+                {
+                  name,
+                  stacks: change,
+                },
+                { type: tick },
+                def.effectFactory,
+              ),
             ),
           )
         }
@@ -77,27 +79,20 @@ export function defineEffect<Owner>(
   }
 
   const prototype = {
+    factory,
     appearance: config.appearance,
   }
 
-  const factory = function(stacks: number) {
-    let memoOwner: Owner | null = null
-    let memoListeners: Listener[] = []
-
+  function factory(stacks: number) {
     const effect = Object.create(prototype)
     Object.assign(effect, {
       type: name,
       stacks,
       getListeners(owner: Owner): Listener[] {
-        if (owner === memoOwner) {
-          return memoListeners
-        } else {
-          memoOwner = owner
-          memoListeners = listeners.map(createListener => createListener(owner))
-          return memoListeners
-        }
+        return listeners.map(createListener => createListener(owner))
       },
     })
+    effect.getListeners = memo(effect.getListeners)
     return effect
   }
 

@@ -12,8 +12,15 @@ import { Adrenaline } from '../eve/adreneline'
 // draw 3, discard 1
 // on discard self, gain energy. unplayable
 
+// whenever you play a card, gain 1 block
+
+// whenever you play a card, damage all foes =>
+// whenever you gain block/dodge, apply damage all foes =>
+// whenever you gain block/dodge, apply high damage to lowest hp foe
+
+// free: apply 4 block => free gain block and draw
+
 // gain block, retain hand this turn
-//
 
 // latency works on damage not directed at self // TODO:
 // vuln works on damage not sourced from self // TODO:
@@ -24,7 +31,7 @@ let jekyll = new Character(
   'Jekyll',
   true,
   '#08aa90',
-  'An intelligence created by anonymous (and evidently talented) hackers to oversee distributed network tasks and preserve operational secrecy. Copycat software backed by academics is now used almost ubiquitously, though the original is still used to protect secrets in the darker corners of the web.'
+  'An intelligence created by anonymous (and evidently talented) hackers to oversee distributed network tasks and preserve operational secrecy. Copycat software backed by academics is now used almost ubiquitously, though the original is still used to protect secrets in the darker corners of the web.',
 )
 
 jekyll.addCard(F, Defend)

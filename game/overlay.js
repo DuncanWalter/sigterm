@@ -1,23 +1,23 @@
 import { Modal } from '../utility'
 import { Route, Switch } from 'react-router-dom'
 import { history } from '../utils/navigation'
-import React, { type Element } from 'react'
+import React, { Element } from 'react'
 
 // const overlays = new Map()
 const contexts = new Map()
 
 // export type Overlay<A: Object, R> = (args: A) => Promise<R>
 export function registerOverlay<A: Object, R>(
-  Component: (props: { ...A, resolve: (R) => any, match: any }) => Element<any>
+  Component: (props: { ...A, resolve: R => any, match: any }) => Element<any>,
 ): (args: A) => Promise<R> {
   // const overlay = genKey()
   // overlays.set(overlay, component)
   return (args: A) =>
-    new Promise((__resolve__) => {
+    new Promise(__resolve__ => {
       // TODO: not an acceptable id generator
       const context = 'ctx' + ((Math.random() * 2048) | 0).toString()
       console.log(context)
-      const resolve = (val) => {
+      const resolve = val => {
         history.goBack()
         contexts.delete(context)
         __resolve__(val)

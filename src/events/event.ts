@@ -1,14 +1,11 @@
-import { processEvent } from './eventResolver'
+import { Dispatch } from '@dwalter/spider-store'
 
 export interface ConsumerArgs<Subject, Data> {
   data: Data
   subject: Subject
   actors: Set<unknown>
   event: Event<Subject, Data>
-  processEvent: <S, D>(event: Event<S, D>) => Promise<Event<S, D>>
-  pushEvent: <S, D>(event: Event<S, D>) => Promise<Event<S, D>>
-  enqueueEvent: <S, D>(event: Event<S, D>) => Promise<Event<S, D>>
-  simulateEvent: <S, D>(event: Event<S, D>) => Promise<Event<S, D>>
+  dispatch: Dispatch
   next: () => Promise<void>
   cancel: () => void
 }
@@ -17,7 +14,7 @@ export interface Consumer<Subject, Data> {
   (args: ConsumerArgs<Subject, Data>): Promise<any>
 }
 
-interface EventFactory<Subject, Data> {
+export interface EventFactory<Subject, Data> {
   (
     actors: unknown | Set<unknown>,
     subject: Subject,
@@ -27,7 +24,7 @@ interface EventFactory<Subject, Data> {
 }
 
 export interface Event<Subject = any, Data = any> {
-  type: unknown
+  type: EventFactory<Subject, Data>
   name: string
   actors: Set<unknown>
   subject: Subject

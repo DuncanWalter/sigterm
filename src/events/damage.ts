@@ -15,10 +15,12 @@ export const damageCreature = defineEvent<Creature, { damage: number }>(
       return
     } else if (data.damage >= subject.health || subject.health <= 0) {
       data.damage = subject.health
+      // TODO: use actions to make this safe
       subject.health = 0
       await new Promise(resolve => setTimeout(resolve, 100))
       await processEvent(destroyCreature(actors, subject, {}, damageCreature))
     } else {
+      // TODO: use actions to make this safe
       subject.health -= data.damage
       await new Promise(resolve => setTimeout(resolve, 100))
     }

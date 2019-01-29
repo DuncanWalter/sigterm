@@ -1,7 +1,6 @@
 import { defineCard, Card, PlayArgs, BasicCardData } from './../card'
 import { BindEffect } from '../../events/bindEffect'
 import { Block } from '../../effects/block'
-import { Creature } from '../../creatures/creature'
 import { targeted } from '../../events/damage'
 import { upgrade, queryHand } from '../utils'
 import { ExhaustCard } from '../../events/exhaustCard'
@@ -20,12 +19,12 @@ export const Dispose: () => Card<DisposeData> = defineCard(
     color: '#223399',
     title: 'Dispose',
     text: 'Gain #{block} block. #[Destroy] a card.',
-  }
+  },
 )
 
 function* playDispose(
   self: Card<DisposeData>,
-  { actors, game, resolver, energy }: PlayArgs
+  { actors, game, resolver, energy }: PlayArgs,
 ) {
   const target: Card<> | void = yield queryHand(game)
 
@@ -37,7 +36,7 @@ function* playDispose(
       stacks: self.data.block,
     },
     Block,
-    targeted
+    targeted,
   )
   yield resolver.processEvent(action)
 
