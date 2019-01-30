@@ -2,7 +2,8 @@ import { Card } from '../cards/card'
 import { defineEvent } from './event'
 import { processEvent } from './eventResolver'
 import { Game } from '../../game/game'
-export const playCard = defineEvent<Card, Game>('playCard', async function({
+
+export const playCard = defineEvent<Card, {}>('playCard', async function({
   data: game,
   subject: card,
   actors,

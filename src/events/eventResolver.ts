@@ -54,9 +54,9 @@ const [getProcessing, setProcessing] = createSettableState(
 //   (a, b) => a.event === b.event,
 // )
 
-export function processEvent<E extends Event>(
-  event: E,
-): (d: Dispatch) => Promise<E> {
+export function processEvent<Data extends {}>(
+  event: Event<any, Data>,
+): (d: Dispatch) => Promise<Data> {
   return createCustomAction(
     tuple(getGame, getListeners, getSimulating),
     (dispatch, game, listeners, simulating) => {
@@ -92,7 +92,7 @@ export function processEvent<E extends Event>(
         }
       }
 
-      return next().then(_ => event)
+      return next().then(_ => event.data)
     },
   )
 }

@@ -1,15 +1,23 @@
 import { Listener, defineListener } from '../events/listener'
+import { processEvent } from '../events'
+import { bindEffect } from '../events/bindEffect'
+import { EventFactory } from '../events/event'
+import { Effectable } from './effectable'
 
-export interface SerializedEffect {
+export interface SerializedEffect<Data = any> {
   stacks: number
   name: string
+  data: Data
 }
 
-export interface Effect<Owner = any> {
-  name: string
-  stacks: number
+export interface Effect<Owner = any, Data = {}> extends SerializedEffect<Data> {
+  type: EffectFactory
   appearance?: Appearance
   getListeners(owner: Owner): Listener[]
+}
+
+export interface EffectFactory<Owner = any, Data = any> {
+  (stacks: number, config?: Data): Effect<Owner, Data>
 }
 
 interface StackBehavior {
@@ -17,7 +25,7 @@ interface StackBehavior {
   delta: (current: number) => number
   min: number
   max: number
-  on: unknown
+  on: EventFactory<any, any>
 }
 
 interface Appearance {
@@ -36,35 +44,28 @@ export function hydrateEffect({ name, stacks }: SerializedEffect): Effect {
   return factory(stacks)
 }
 
-export function defineEffect<Owner, Data>(
+export const cloneEffect = hydrateEffect
+
+export function defineEffect<Owner extends Effectable, Data>(
   name: string,
   config: {
     appearance?: Appearance
     stackBehavior?: StackBehavior
+    data?: Data
   },
   ...listeners: ((owner: Owner) => Listener)[]
-) {
-  // TODO: Create tick listener factory
+): EffectFactory<Owner, Data> {
   if (config.stackBehavior) {
     const { min, max, delta, stacked, on } = config.stackBehavior
-    const listenerFactory = defineListener<Owner, Data, Owner>(
+    const listenerFactory = defineListener<Owner, unknown, Owner>(
       `@effect/${name}/stack-behavior`,
       async ({ subject, dispatch }) => {
-        const stacks = subject.stacksOf(name)
+        const stacks = subject.stacksOf(factory)
         const change = delta(stacks) - stacks
         if (change) {
           await dispatch(
             processEvent(
-              bindEffect(
-                owner,
-                owner,
-                {
-                  name,
-                  stacks: change,
-                },
-                { type: tick },
-                def.effectFactory,
-              ),
+              bindEffect(subject, subject, factory(stacks), factory),
             ),
           )
         }
@@ -76,11 +77,19 @@ export function defineEffect<Owner, Data>(
       [],
       [on],
     )
+    listeners.push(listenerFactory)
   }
 
   const prototype = {
     factory,
     appearance: config.appearance,
+    stackBehavior: config.stackBehavior || {
+      stacked: false,
+      min: 1,
+      max: 1,
+      delta: i => i,
+      on: fallback,
+    },
   }
 
   function factory(stacks: number) {
@@ -91,6 +100,7 @@ export function defineEffect<Owner, Data>(
       getListeners(owner: Owner): Listener[] {
         return listeners.map(createListener => createListener(owner))
       },
+      data: { ...config.data } || {},
     })
     effect.getListeners = memo(effect.getListeners)
     return effect
@@ -101,8 +111,17 @@ export function defineEffect<Owner, Data>(
   return factory
 }
 
-const fallback = defineEffect('Fallback', {
-  appearance: {
-    description: 'Could not find the ',
-  },
-})
+// TODO: move to utils
+function memo<A, R>(fun: (a: A) => R) {
+  let lastArg = {} as A
+  let lastRet = {} as R
+  return (a: A) => {
+    if (a === lastArg) {
+      return lastRet
+    } else {
+      return (lastRet = fun((lastArg = a)))
+    }
+  }
+}
+
+const fallback = defineEffect('Fallback', {})

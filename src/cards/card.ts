@@ -1,41 +1,39 @@
-import { Effect, SerializedEffect, hydrateEffect } from '../effects/effect'
+import { Effect, SerializedEffect, cloneEffect } from '../effects/effect'
 import { Dispatch } from '@dwalter/spider-store'
 import { ReactElement } from 'react'
+import {
+  dataOf,
+  stacksOf,
+  getListeners,
+  Effectable,
+} from '../effects/effectable'
+import { Game } from '../../game/game'
 
-export type PlayArgs<
-  Data extends BasicCardDefinitionData = BasicCardDefinitionData
-> = Data & {
+export type PlayArgs<Data> = {
   actors: Set<unknown>
   dispatch: Dispatch
   energy: number
+  data: Data
+  game: Game
 }
 
-interface BasicCardDefinitionData {
+interface BaseData {
   energy: 'X' | number | null
   // keywords: Keyword[]
 }
 
-interface CardDefinition<Data extends BasicCardDefinitionData> {
-  title: ((data: Data) => ReactElement<any>)
-  text: ((data: Data) => ReactElement<any>)
+interface CardDefinition<Data extends BaseData> {
+  title: ((data: Data) => string | ReactElement<any>)
+  text: ((data: Data) => string | ReactElement<any>)
   color: string
-  effects: Effect[]
+  effects?: Effect[]
+  // keywords?: Keyword[]
   data: Data
   play(args: PlayArgs<Data>): Promise<Partial<Data>>
 }
 
-export interface Card<
-  Data extends BasicCardDefinitionData = BasicCardDefinitionData
-> extends CardDefinition<Data> {
-  id: number
-  name: string
-}
-
-interface SerializedCard<Data> {
-  id: number
-  name: string
-  effects: SerializedEffect[]
-  data: Data
+interface CardFactory<Data extends BaseData> {
+  (data?: Partial<Data>, effects?: SerializedEffect<Card>[]): Card<Data>
 }
 
 const cards = new Map<
@@ -43,7 +41,27 @@ const cards = new Map<
   (data: any, effects?: SerializedEffect[]) => Card<any>
 >()
 
-export function defineCard<Data extends BasicCardDefinitionData>(
+interface SerializedCard<Data> {
+  id: number
+  name: string
+  effects: SerializedEffect<Card>[]
+  data: Data
+}
+
+export interface Card<Data extends BaseData = BaseData> extends Effectable {
+  id: number
+  name: string
+  type: CardFactory<Data>
+  title: ((data: Data) => string | ReactElement<any>)
+  text: ((data: Data) => string | ReactElement<any>)
+  color: string
+
+  data: Data
+
+  play(this: Card<Data>, args: PlayArgs<Data>): Promise<Partial<Data>>
+}
+
+export function defineCard<Data extends BaseData>(
   name: string,
   {
     title,
@@ -53,43 +71,55 @@ export function defineCard<Data extends BasicCardDefinitionData>(
     play: playCard,
     effects: defaultEffects,
   }: CardDefinition<Data>,
-): () => Card<Data> {
-  const prototype = {
-    title,
-    text,
-    color,
-    // TODO:
-    play(this: Card<Data>, playArgs: PlayArgs<Data>) {
-      return playCard({
-        ...this.data,
-        ...playArgs,
-      })
-    },
-  }
+): CardFactory<Data> {
+  function factory(
+    data: Partial<Data> = {},
+    effects: SerializedEffect<Card>[] = [],
+  ): Card<Data> {
+    return {
+      name,
+      id: createId(),
+      type: factory,
+      title,
+      text,
+      color,
+      data: { ...defaultData, ...data },
+      effects: (effects || defaultEffects || []).map(cloneEffect),
+      stacksOf,
+      dataOf,
+      getListeners,
 
-  const factory = {
-    [name](data: Partial<Data> = {}, effects?: SerializedEffect[]) {
-      const card = Object.create(prototype)
-      Object.assign(card, {
-        name,
-        id: createId(),
-        data: { ...defaultData, data },
-        effects: (effects || defaultEffects).map(hydrateEffect),
-      })
-      return card
-    },
-  }[name]
+      play(this: Card<Data>, playArgs: PlayArgs<Data>) {
+        return playCard({
+          data: this.data,
+          ...playArgs,
+        })
+      },
+    }
+  }
 
   cards.set(name, factory)
 
   return factory
 }
 
-export function hydrateCard<Data extends BasicCardDefinitionData>(
-  card: SerializedCard<Data>,
-) {
-  const factory = cards.get(card.name)! // TODO: fallback card
+export function hydrateCard<Data extends BaseData>(card: SerializedCard<Data>) {
+  const factory = (cards.get(card.name) || fallback) as CardFactory<Data>
   return factory(card.data, card.effects)
 }
 
 export const cloneCard = hydrateCard
+
+const fallback = defineCard('fallback', {
+  title() {
+    return 'Fallback'
+  },
+  text() {
+    return '.'
+  },
+  color: '#000000',
+  data: { energy: null },
+  async play() {
+    return {}
+  },
+})

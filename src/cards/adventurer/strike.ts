@@ -1,12 +1,11 @@
 import { defineCard } from '../card'
 import { targeted, damageCreature } from '../../events/damage'
 import { blockable } from '../../events/damage'
-import { template } from '../../utils/textTemplate'
 import { processEvent } from '../../events/eventResolver'
 
 export const Strike = defineCard('@adventurer/strike', {
-  title: data => 'Strike',
-  text: data => template`Deal ${card => card.damage} damage.`,
+  title: () => 'Strike',
+  text: ({ damage }) => `Deal ${damage} damage.`,
   color: '#dd2244',
 
   data: {
@@ -14,24 +13,16 @@ export const Strike = defineCard('@adventurer/strike', {
     damage: 6,
   },
 
-  async play({ actors, damage, energy, dispatch }) {
+  async play({ actors, data, energy, dispatch }) {
     let target = await queryEnemy(game)
 
     const { damage } = await dispatch(
-      processEvent(
-        damageCreature(
-          [card, ...actors],
-          target,
-          { damage: card.damage },
-          targeted,
-          blockable,
-        ),
-      ),
+      processEvent(damageCreature(actors, target, data, targeted, blockable)),
     )
 
     return { damage, energy }
   },
 })
 
-export const StrikeR = upgrade('R', Strike, { damage: 9 })
-export const StrikeL = upgrade('L', Strike, { energy: 0 })
+// export const StrikeR = upgrade('R', Strike, { damage: 9 })
+// export const StrikeL = upgrade('L', Strike, { energy: 0 })
