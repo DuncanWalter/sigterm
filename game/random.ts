@@ -1,4 +1,4 @@
-import { createSettableState, Dispatch } from '@dwalter/spider-store'
+import { createSettableState } from '@dwalter/spider-store'
 
 const modulo = 1245842437
 const scalar = 4829294781
@@ -11,15 +11,10 @@ function randomSeed() {
 const [, setRandom] = createSettableState('@random', randomSeed())
 
 export function consumeRandom() {
-  return (dispatch: Dispatch) =>
-    new Promise(resolve => {
-      dispatch(
-        setRandom(randomState => {
-          resolve(randomState / modulo)
-          return (randomState * scalar + offset) % modulo
-        }),
-      )
-    })
+  return setRandom(
+    rand => (rand * scalar + offset) % modulo,
+    rand => rand / modulo,
+  )
 }
 
 export function resetRandom() {

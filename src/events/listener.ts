@@ -1,5 +1,5 @@
 import { Consumer, Event, EventFactory } from './event'
-import { declareEventDependency } from './orderEvents'
+import { declareEventDependency } from './orderConsumers'
 
 interface ListenerFactory<Subject, Data, Config> {
   (config: Config): Listener<Subject, Data>

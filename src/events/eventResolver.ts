@@ -1,22 +1,13 @@
-import { orderEvents } from './orderEvents'
+import { orderConsumers } from './orderConsumers'
 import { Event } from './event'
 
 import { Dispatch, createSettableState } from '@dwalter/spider-store'
 import {
   createSelector,
-  tuple,
   createSideEffect,
-  createCustomAction,
+  wrapThunk,
 } from '@dwalter/spider-hook'
 import { getGame } from '../../game/game'
-
-// TODO: this logic seems convoluted, so it's worth taking a second look.
-// It may actually just be this hard, though...
-
-interface EnqueuedEvent {
-  event: Event
-  resolve: (event: Event) => unknown
-}
 
 function name(tag: string) {
   return `@event-resolver/${tag}`
@@ -27,136 +18,131 @@ const [getSimulating, setSimulating] = createSettableState(
   0,
 )
 
-const [getProcessing, setProcessing] = createSettableState(
-  name('processing'),
-  0,
+const [getEventStack, setEventStack] = createSettableState(
+  name('event-stack'),
+  [] as Event[],
 )
 
-// const [getEventQueue, setEventQueue] = createSettableState(
-//   name('event-queue'),
-//   [] as EnqueuedEvent[],
-// )
+export function processEvent<Data extends {}>(event: Event<any, Data>) {
+  return wrapThunk((dispatch, resolve) => {
+    const game = resolve(getGame)
+    const listeners = resolve(getListeners)
+    const simulating = resolve(getSimulating)
 
-// const [getEvent, setEvent] = createSettableState(
-//   name('event'),
-//   null as null | Event,
-// )
+    if (simulating === 0) {
+      console.log(event.name, event /*game*/)
+    }
 
-// const getEventContext = createSelector(
-//   tuple(getSimulating, getProcessing, getEvent, getListeners, getGame),
-//   (simulating, processing, event, listeners, game) => ({
-//     simulating,
-//     processing,
-//     event,
-//     listeners,
-//     game,
-//   }),
-//   (a, b) => a.event === b.event,
-// )
+    dispatch(pushEvent(event))
 
-export function processEvent<Data extends {}>(
-  event: Event<any, Data>,
-): (d: Dispatch) => Promise<Data> {
-  return createCustomAction(
-    tuple(getGame, getListeners, getSimulating),
-    (dispatch, game, listeners, simulating) => {
+    const executionQueue = orderConsumers(listeners, event) as Event[]
+
+    let index: number = 0
+    let active: boolean = true
+
+    function cancel() {
+      active = false
       if (simulating === 0) {
-        console.log(event.name, event /*game*/)
+        console.log('Cancelled event', event.name)
       }
+    }
 
-      let executionQueue = orderEvents([...listeners, event])
+    const boundProcessEvent = <D>(boundEvent: Event<D>) =>
+      dispatch(processEvent(boundEvent))
+    const boundPushEvent = (boundEvent: Event) =>
+      dispatch(pushEvent(boundEvent))
+    const boundEnqueueEvent = (boundEvent: Event) =>
+      dispatch(enqueueEvent(boundEvent))
 
-      let index: number = 0
-      let active: boolean = true
+    const consumerArgs = {
+      data: event.data,
+      next,
+      cancel,
+      subject: event.subject,
+      actors: event.actors,
+      dispatch,
+      game,
 
-      function cancel() {
-        active = false
-        if (simulating === 0) {
-          console.log('Cancelled event', event.name)
-        }
+      processEvent: boundProcessEvent,
+      pushEvent: boundPushEvent,
+      enqueueEvent: boundEnqueueEvent,
+
+      simulating: !!simulating,
+    }
+
+    async function next() {
+      for (; index < executionQueue.length && active; index++) {
+        await executionQueue[index].consumer(consumerArgs)
       }
+    }
 
-      async function next() {
-        for (; index < executionQueue.length && active; index++) {
-          await executionQueue[index].consumer({
-            data: event.data,
-            next,
-            cancel,
-            subject: event.subject,
-            actors: event.actors,
-            dispatch,
-            game,
-            listeners,
-            event,
-          })
-        }
+    return next().then(_ => {
+      if (event !== dispatch(popEvent())) {
+        throw new Error('Event processing detected partial overlap of 2 events')
       }
-
-      return next().then(_ => event.data)
-    },
-  )
+      return event.data
+    })
+  })
 }
 
-const getNextEvent = createSelector(
-  tuple(getProcessing, getEventQueue),
-  (processing, queue) => {
-    return processing === 0 ? queue[0] : undefined
-  },
-  // TODO: do I need to make this dedup here?
-)
+// const getNextEvent = createSelector(
+//   [getEventStack, getEventQueue],
+//   (stack, queue) => (!stack.length && queue.length ? queue[0] : null),
+// )
 
-createSideEffect(getNextEvent, nextEvent => {
-  if (nextEvent) {
-    setEvent(nextEvent.event)
-  }
-})
+// export const manageEventQueue = createSideEffect(
+//   getNextEvent,
+//   (nextEvent, dispatch) => {
+//     if (nextEvent) {
+//       // TODO: still broken...
+//       dispatch(processEvent(nextEvent))
+//     }
+//   },
+// )
 
-// let simulating = 0
-// let processing = null as null | Promise<void>
-// let queue = [] as {
-//   event: Event
-//   resolve: (event: Event) => unknown
-// }[]
-
-// TODO: allow this to return a promise which only resolves
-// when the queue empties.
-// TODO: allow the processingQueue to be paused and restarted
-// async function processQueue(dispatch: Dispatch): Promise<void> {
-//   return (
-//     processing ||
-//     (processing = new Promise(async resolveQueue => {
-//       while (queue.length !== 0) {
-//         const { event, resolve } = queue.pop()!
-//         await dispatch(await processEvent(event))
-//         resolve(event)
-//       }
-//       resolveQueue()
-//       processing = null
-//     }))
-//   )
+// export function enqueueEvent<Subject, Data>(event: Event<Subject, Data>) {
+//   return createCustomAction([getSimulating], (dispatch, simulating) => {
+//     if (!simulating) {
+//       dispatch(setEventQueue(queue => [...queue, event]))
+//     }
+//   })
 // }
 
-export function enqueueEvent<Subject, Data>(event: Event<Subject, Data>) {
-  if (simulating != 0) return () => Promise.resolve(event)
-  return async function(dispatch: Dispatch) {
-    const promise = new Promise<Event<Subject, Data>>(
-      resolve => (queue = [{ event, resolve }, ...queue]),
-    )
-    processQueue(dispatch)
-    return promise
-  }
+// export function pushEvent<Subject, Data>(event: Event<Subject, Data>) {
+//   return createCustomAction([getSimulating], (dispatch, simulating) => {
+//     if (!simulating) {
+//       dispatch(setEventQueue(queue => [event, ...queue]))
+//     }
+//   })
+// }
+
+function pushEvent(event: Event) {
+  return setEventStack(stack => [event, ...stack])
 }
 
-export function pushEvent<Subject, Data>(event: Event<Subject, Data>) {
-  if (simulating != 0) return () => Promise.resolve(event)
-  return async function(dispatch: Dispatch) {
-    const promise = new Promise<Event<Subject, Data>>(resolve =>
-      queue.push({ event, resolve }),
-    )
-    processQueue(dispatch)
-    return promise
-  }
+function popEvent() {
+  return setEventStack(([, ...rest]) => rest, ([head]) => head)
 }
+
+function enqueueEvent() {}
+
+function nextEvent() {}
+
+const [getEventQueue, setEventQueue] = createSettableState(
+  name('event-queue'),
+  [] as Event[],
+)
+
+createSideEffect(getEventStack, (stack, dispatch) => {
+  if (!stack.length) {
+    dispatch((_, resolve) => {
+      const queue = resolve(getEventQueue)
+      if (!queue.length) {
+        dispatch(processEvent(dispatch(nextEvent())))
+      }
+    })
+  }
+})
 
 export function simulateEvent(event: Event) {
   return async function(dispatch: Dispatch) {

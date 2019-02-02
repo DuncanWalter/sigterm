@@ -8,6 +8,7 @@ import {
   Effectable,
 } from '../effects/effectable'
 import { Game } from '../../game/game'
+import { createId } from '../utils/id'
 
 export type PlayArgs<Data> = {
   actors: Set<unknown>
@@ -88,7 +89,6 @@ export function defineCard<Data extends BaseData>(
       stacksOf,
       dataOf,
       getListeners,
-
       play(this: Card<Data>, playArgs: PlayArgs<Data>) {
         return playCard({
           data: this.data,

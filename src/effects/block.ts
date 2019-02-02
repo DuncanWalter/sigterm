@@ -2,26 +2,23 @@ import { defineEffect } from './effect'
 import { blockable, damageCreature } from '../events/damage'
 import { bindEffect } from '../events/bindEffect'
 import { defineListener } from '../events/listener'
-import { processEvent } from '../events'
 import { Creature } from '../creatures/creature'
 
 const blockListener = defineListener<Creature, { damage: number }, Creature>(
   '@block',
-  async ({ data, subject, actors, cancel, simulating, dispatch }) => {
+  async ({ data, subject, actors, cancel, simulating, processEvent }) => {
     if (simulating) return
     if (typeof data.damage == 'number') {
       if (data.damage <= subject.stacksOf(block)) {
-        await dispatch(
-          processEvent(bindEffect(actors, subject, block(-data.damage), block)),
-        )
-        data.damage = 0
+        await processEvent(
+          bindEffect(actors, subject, block(-data.damage), block),
+        ),
+          (data.damage = 0)
         cancel()
       } else {
         data.damage -= subject.stacksOf(block)
-        await dispatch(
-          processEvent(
-            bindEffect(actors, subject, block(-subject.stacksOf(block)), block),
-          ),
+        await processEvent(
+          bindEffect(actors, subject, block(-subject.stacksOf(block)), block),
         )
       }
     } else {

@@ -4,7 +4,7 @@ import { processEvent } from '../../events'
 import { bindEffect } from '../../events/bindEffect'
 import { targeted } from '../../events/damage'
 
-export const Defend = defineCard('@adventurer/Defend', {
+export const defend = defineCard('@adventurer/Defend', {
   title: () => 'Defend',
   text: data => `Gain ${data.block} block.`,
   color: '#223399',

@@ -1,5 +1,6 @@
 import { topologicalSort } from '../utils/topologicalSort'
 import { Event } from './event'
+import { Listener } from './listener'
 
 const edges = [] as [unknown, unknown][]
 let ranking = new Map<unknown, number>()
@@ -10,7 +11,7 @@ export function declareEventDependency(parent: unknown, child: unknown) {
   edges.push([parent, child])
 }
 
-function getRank(event: Event) {
+function getRank(event: Event | Listener) {
   if (dirty) {
     ranking = new Map()
     topologicalSort(edges).forEach((value, key) => ranking.set(value, key))
@@ -18,7 +19,9 @@ function getRank(event: Event) {
   return ranking.get(event.type) || Infinity
 }
 
-export function orderEvents(events: Event[]): Event[] {
+interface ConsumerList extends Array<Event | Listener> {}
+
+export function orderConsumers(...events: ConsumerList): (Event | Listener)[] {
   events.sort((a, b) => {
     const ra = getRank(a)
     const rb = getRank(b)

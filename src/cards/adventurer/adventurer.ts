@@ -1,4 +1,4 @@
-import { CardLibrary } from '../cardLibrary'
+// import { CardLibrary } from '../cardLibrary'
 // import { CardPool } from '../cardPool'
 // import { Strike, StrikeL, StrikeR } from './strike'
 // import { Defend, DefendL, DefendR } from './defend'
@@ -6,6 +6,8 @@ import { CardLibrary } from '../cardLibrary'
 // import { Acid } from './acid'
 // import { Cleave } from './cleave'
 import { Character } from '../../character'
+import { defend } from './defend'
+import { strike } from './strike'
 // import { LookAhead } from '../../pragmas/lookAhead'
 // import { Snapshot } from '../../pragmas/snapshot'
 
@@ -33,8 +35,8 @@ export const adventurer = new Character(
   'Basic set of cards available to all adventurers.',
 )
 
-// adventurer.addCard(F, Defend, DefendL, DefendR)
-adventurer.addCard(F, Strike /*, StrikeL, StrikeR*/)
+adventurer.addCard(defend /*, DefendL, DefendR*/)
+adventurer.addCard(strike /*, StrikeL, StrikeR*/)
 
 // adventurer.addCard(D, Bash)
 // adventurer.addCard(D, Cleave)
