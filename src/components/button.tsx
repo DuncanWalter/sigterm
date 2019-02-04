@@ -1,138 +1,107 @@
-import React, { Element, StatelessFunctionalComponent } from 'react'
-import styled, { css } from 'styled-components'
+import * as React from 'react'
 
 import { Text } from './text'
+import { readOption, ClassName, joinNames } from './styles'
+import { style } from 'typestyle'
 
-type ButtonType = 'primary' | 'secondary' | 'warning'
+// TODO: &:focus styles
 
-type ButtonSize = 'small' | 'large'
+const types = ['primary', 'secondary', 'danger']
 
-type ButtonProps = {
+interface ButtonProps {
+  className?: ClassName
   disabled?: boolean
-  size?: ButtonSize
-  type?: ButtonType
+  primary?: boolean
+  secondary?: boolean
+  danger?: boolean
+  type?: 'primary' | 'secondary' | 'danger'
   text?: string
   onClick?: () => unknown
-  small?: true
-  large?: true
-  primary?: true
-  secondary?: true
-  warning?: true
+  children?: never
 }
 
-type DefaultedButtonProps = {
-  disabled: boolean
-  size: ButtonSize
-  type: ButtonType
-  text: string
-  onClick: () => unknown
-}
-
-export function getButtonSize(props: ButtonProps): ButtonSize | null {
-  switch (true) {
-    case !!props.small || props.size === 'small':
-      return 'small'
-    case !!props.large || props.size === 'large':
-      return 'large'
-    default:
-      return null
+export function Button(props: ButtonProps) {
+  const { text, onClick, children, className, disabled } = props
+  if (children) {
+    console.error('Use the "text" prop of Button instead of passing children')
   }
-}
-
-export function getButtonType(props: ButtonProps): ButtonType | null {
-  switch (true) {
-    case !!props.primary || props.type === 'primary':
-      return 'primary'
-
-    case !!props.secondary || props.type === 'secondary':
-      return 'secondary'
-
-    case !!props.warning || props.type === 'warning':
-      return 'warning'
-
-    default:
-      return null
-  }
-}
-
-export function interpretButtonProps(props: ButtonProps): DefaultedButtonProps {
-  return {
-    text: props.text || '',
-    onClick: !props.disabled && props.onClick ? props.onClick : () => undefined,
-    type: getButtonType(props) || 'secondary',
-    disabled: !!props.disabled,
-    size: getButtonSize(props) || 'small',
-  }
-}
-
-const size = css`
-  ${(props: DefaultedButtonProps) => {
-    switch (props.size) {
-      case 'small': {
-        return `
-          padding: 0 16px 0;
-        `
-      }
-      case 'large': {
-        return `
-          padding: 8px 32px 8px;
-        `
-      }
-    }
-  }};
-`
-
-const type = css`
-  cursor: pointer;
-  color: #aaaaaa;
-  background-color: ${(props: DefaultedButtonProps) => {
-    switch (props.type) {
-      case 'primary':
-        return '#332211'
-      case 'secondary':
-        return '#112233'
-      case 'warning':
-        return '#113322'
-    }
-  }};
-  &:hover {
-    background-color: ${(props: DefaultedButtonProps) => {
-      switch (props.type) {
-        case 'primary':
-          return '#0000ff'
-        case 'secondary':
-          return '#00ff00'
-        case 'warning':
-          return '#ff0000'
-      }
-    }};
-  }
-`
-
-const disabled = css`
-  color: #222222;
-  background-color: #aaaaaa;
-`
-
-const ButtonFrame = styled.div`
-  display: inline-block;
-  margin: 16px;
-  ${() => size};
-  ${(props: DefaultedButtonProps) => (props.disabled ? disabled : type)};
-`
-
-export const Button: StatelessFunctionalComponent<ButtonProps> = (
-  props: ButtonProps,
-) => {
-  const options = interpretButtonProps(props)
+  const type = readOption(types, props, 'secondary')
   return (
-    <ButtonFrame {...options}>
-      <Text
-        size={options.size === 'large' ? 'medium' : 'small'}
-        disabled={options.disabled}
-      >
-        {options.text}
-      </Text>
-    </ButtonFrame>
+    <div
+      onClick={disabled ? undefined : onClick}
+      className={joinNames(button, className, {
+        [buttonPrimary]: type === 'primary',
+        [buttonSecondary]: type === 'secondary',
+        [buttonDanger]: type === 'danger',
+        [buttonDisabled]: disabled,
+      })}
+    >
+      <Text button>{text}</Text>
+    </div>
   )
 }
+
+const button = style({
+  borderRadius: 4,
+  color: '#ffffff',
+  cursor: 'pointer',
+  display: 'inline-block',
+  padding: '8px 16px 8px',
+  transition: '0.2s',
+})
+
+const buttonDisabled = style({
+  $nest: {
+    [`&.${button}`]: {
+      backgroundColor: '#9999a3',
+      color: '#222233',
+      cursor: 'not-allowed',
+      $nest: {
+        '&:hover': {
+          backgroundColor: '#9999a3',
+          color: '#222233',
+        },
+      },
+    },
+  },
+})
+
+const buttonPrimary = style({
+  $nest: {
+    [`&.${button}`]: {
+      backgroundColor: 'rgb(56, 72, 221)',
+      $nest: {
+        '&:hover': {
+          backgroundColor: 'rgba(56, 72, 221, 0.8)',
+        },
+      },
+    },
+  },
+})
+
+const buttonDanger = style({
+  $nest: {
+    [`&.${button}`]: {
+      backgroundColor: 'rgb(221, 72, 56)',
+      $nest: {
+        '&:hover': {
+          backgroundColor: 'rgba(221, 72, 56, 0.8)',
+        },
+      },
+    },
+  },
+})
+
+const buttonSecondary = style({
+  $nest: {
+    [`&.${button}`]: {
+      color: '#222299',
+      padding: 8,
+      $nest: {
+        '&:hover': {
+          color: '#5555aa',
+        },
+      },
+    },
+  },
+})

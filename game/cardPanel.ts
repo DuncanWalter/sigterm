@@ -1,24 +1,20 @@
-import type { State } from '../state'
 import { withState } from '../state'
-import { Row, Block, Shim } from '../utility'
-import { Card } from '../cards/component'
-import { Card as CardO } from '../cards/card'
-import styled from 'styled-components'
 import React from 'react'
+import { style } from 'typestyle'
 
 // TODO: clean up styles
 
-const Wrapper = styled.div`
-  overflow-y: scroll;
-  overflow-x: hidden;
-  position: relative;
-  flex: 1;
-  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.35),
-    inset 0 0 8px rgba(0, 0, 0, 0.35);
-  margin: 12px;
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 4px;
-`
+const wrapper = style({
+  overflowY: 'scroll',
+  overflowX: 'hidden',
+  position: 'relative',
+  flex: 1,
+  boxShadow:
+    'inset 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 0 8px rgba(0, 0, 0, 0.35)',
+  margin: 12,
+  background: 'rgba(0, 0, 0, 0.18)',
+  borderRadius: '4px',
+})
 
 const Canvas = styled.div`
   position: absolute;
@@ -45,18 +41,18 @@ const CardHolder = styled.div`
 `
 
 type CardPanelProps = {
-  state: State,
-  cards: CardO<>[],
-  sets: string[],
-  onClick?: (card: Card) => void,
+  state: State
+  cards: CardO<>[]
+  sets: string[]
+  onClick?: (card: Card) => void
 }
 
 const CardPanelInner = ({ state, cards, sets, onClick }: CardPanelProps) => (
   <Wrapper>
     <Canvas>
       <Panel>
-        {cards.map((card) => (
-          <CardHolder onClick={(click) => (onClick ? onClick(card) : null)}>
+        {cards.map(card => (
+          <CardHolder onClick={click => (onClick ? onClick(card) : null)}>
             <Card card={card} sets={sets} glow={false} />
           </CardHolder>
         ))}

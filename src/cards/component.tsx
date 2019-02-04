@@ -1,27 +1,20 @@
-import type { Rarity } from '../character'
-import type { Card as CardObject } from './card'
-import type { State } from '../state'
-import type { Game } from '../game/battle/battleState'
+// import type { Rarity } from '../character'
+// import type { Card as CardObject } from './card'
+// import type { State } from '../state'
+// import type { Game } from '../game/battle/battleState'
+import * as React from 'react'
 import { resolver } from '../events/eventResolver'
 import { PlayCard } from '../events/playCard'
 import { renderEffect as EffectComponent } from '../effects/renderEffect'
 import { withState } from '../state'
 import { CardLibrary } from './cardLibrary'
-import styled from 'styled-components'
+// import styled from 'styled-components'
 import { ToolTips } from '../components/toolTips'
 import { Effect } from '../effects/effect'
-import React from 'react'
 
 import mask from '../../static/images/316151-200.png'
 import { Material, Col } from '../utility'
 import { withGame } from '../game/battle/battleState'
-
-interface Props {
-  card: CardObject<>;
-  state: State;
-  glow: boolean;
-  sets?: string[];
-}
 
 // TODO: consider bringing back rarity indicating glow
 const CardBack = Material.extend`
@@ -42,7 +35,7 @@ const CardDivider = styled.div`
 // TODO: border radius troubles
 const CardTitle = styled.div`
   height: 40px;
-  background-color: ${(props) => props.membership.color};
+  background-color: ${props => props.membership.color};
   justify-content: center;
   align-items: center;
   display: flex;
@@ -68,7 +61,7 @@ const CardVignette = styled.div`
   width: 100%;
   height: 100%;
   mask: url(${window.location + '/../' + mask}) center center no-repeat;
-  background-color: ${(props) => props.color};
+  background-color: ${props => props.color};
 `
 
 const CardImage = styled.div`
@@ -90,7 +83,7 @@ const CardEffects = styled.div`
 
 const CardCost = styled.div`
   position: absolute;
-  ${(props) =>
+  ${props =>
     props.playable
       ? `
             left: -8px;
@@ -106,13 +99,13 @@ const CardCost = styled.div`
             height: 40px;
             border-radius: 0;
         `} transition: 0.7s;
-  background-color: ${(props) =>
+  background-color: ${props =>
     props.energy === undefined ? '#1a1a1a' : '#eeeeee'};
   justify-content: center;
   align-items: center;
   display: flex;
   font-size: 2rem;
-  box-shadow: ${(props) =>
+  box-shadow: ${props =>
     props.playable
       ? `
             0 4px 12px rgba(0, 0, 0, 0.25),
@@ -120,7 +113,7 @@ const CardCost = styled.div`
             0 0 4px rgba(0, 0, 0, 0.50)
         `
       : 'none'};
-  color: ${(props) => props.membership.color};
+  color: ${props => props.membership.color};
 `
 
 const CardRarity = styled.div`
@@ -129,8 +122,8 @@ const CardRarity = styled.div`
   bottom: 186px;
   width: 20px;
   height: 20px;
-  background-color: ${(props) => colorRarity(props.membership.rarity)};
-  box-shadow: ${(props) =>
+  background-color: ${props => colorRarity(props.membership.rarity)};
+  box-shadow: ${props =>
     `
             0px 3px 0px rgba(0, 0, 0, 0.35),
             0px 0px 12px ${colorRarity(props.membership.rarity)};
@@ -147,7 +140,7 @@ const CardEffectWrapper = styled.div`
   transition: 0.4s;
   border-radius: 20px;
   margin-bottom: 4px;
-  background-color: ${(props) => props.effect.appearance.color};
+  background-color: ${props => props.effect.appearance.color};
   overflow: hidden;
   padding: 0 16px 0;
   & p.internal {
@@ -169,16 +162,18 @@ const CardEffectWrapper = styled.div`
     0 0 4px rgba(0, 0, 0, 0.5);
 `
 
-const CardEffect = ({ effect }) =>
-  effect.appearance ? (
-    <CardEffectWrapper effect={effect}>
-      <p class="internal">{`${effect.appearance.name}: ${effect.stacks}`}</p>
-      <p class="preview">{`${effect.stacks}`}</p>
-      <ToolTips effects={[effect]} />
-    </CardEffectWrapper>
-  ) : null
+interface Props {
+  title: string
+  text: string
+  color: string
+  energy: string
+  rarity: number
 
-export const Card = withGame(({ card, game, glow, sets, playEnergy }) => {
+  glow: boolean
+  theme: CardTheme
+}
+
+export function Card() {
   const actors = new Set()
   actors.add(game.player)
   actors.add(card)
@@ -226,11 +221,13 @@ export const Card = withGame(({ card, game, glow, sets, playEnergy }) => {
       </Col>
       <ToolTips effects={card.effects} />
       <CardEffects>
-        {[...card.effects].map((effect) => <CardEffect effect={effect} />)}
+        {[...card.effects].map(effect => (
+          <CardEffect effect={effect} />
+        ))}
       </CardEffects>
     </CardBack>
   )
-})
+}
 
 function colorRarity(rarity: Rarity) {
   switch (rarity) {

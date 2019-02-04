@@ -2,10 +2,11 @@ import { defineCard } from '../card'
 import { targeted, damageCreature } from '../../events/damage'
 import { blockable } from '../../events/damage'
 import { processEvent } from '../../events/eventResolver'
+import { template, datum } from '../../utils/textTemplate'
 
 export const strike = defineCard('@adventurer/strike', {
-  title: () => 'Strike',
-  text: ({ damage }) => `Deal ${damage} damage.`,
+  title: 'Strike',
+  text: template`Deal ${datum('damage')} damage.`,
   color: '#dd2244',
 
   data: {

@@ -1,5 +1,6 @@
 import { createSettableState } from '@dwalter/spider-store'
 import { Creature } from '../src/creatures/creature'
+import { destroyId } from '../src/utils/id'
 
 const [getCreatures, setCreatures] = createSettableState(
   '@creatures',
@@ -9,20 +10,14 @@ const [getCreatures, setCreatures] = createSettableState(
 
 export { getCreatures }
 
-export function updateCreature(
-  id: number,
-  update: (creature: Creature) => unknown,
-) {
-  return setCreatures(creatures => {
-    update(creatures.get(id)!)
-    return creatures
-  })
+export function updateCreatures() {
+  return setCreatures(creatures => creatures)
 }
 
-export function destroyCreature(id: number) {
+export function destroyCreature(creature: Creature) {
   return setCreatures(creatures => {
-    creatures.delete(id)
-    destroyId(id)
+    creatures.delete(creature.id)
+    destroyId(creature.id)
     return creatures
   })
 }

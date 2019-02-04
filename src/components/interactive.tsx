@@ -1,6 +1,6 @@
 import React, {
-  type Element,
-  type ChildrenArray,
+  Element,
+  ChildrenArray,
   Children,
   cloneElement,
 } from 'react'

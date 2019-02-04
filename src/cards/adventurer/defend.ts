@@ -3,10 +3,11 @@ import { block } from '../../effects/block'
 import { processEvent } from '../../events'
 import { bindEffect } from '../../events/bindEffect'
 import { targeted } from '../../events/damage'
+import { template, datum } from '../../utils/textTemplate'
 
 export const defend = defineCard('@adventurer/Defend', {
-  title: () => 'Defend',
-  text: data => `Gain ${data.block} block.`,
+  title: 'Defend',
+  text: template`Gain ${datum('block')} block.`,
   color: '#223399',
 
   data: {

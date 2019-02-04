@@ -23,6 +23,10 @@ export interface Consumer<Subject, Data, Mutating extends boolean = false> {
   (args: ConsumerArgs<Subject, Data, Mutating>): Promise<any>
 }
 
+/**
+ * TODO: needs to somehow implement a name/description service
+ * that is flexible enough to support grammatically flexibly usage.
+ */
 export interface EventFactory<Subject, Data> {
   (
     actors: unknown | Set<unknown>,
@@ -71,5 +75,6 @@ export function defineEvent<Subject, Data>(
       }
     },
   }[name]
+
   return factory
 }

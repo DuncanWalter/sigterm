@@ -1,13 +1,7 @@
 import * as React from 'react'
 import { useState } from 'react'
-
-import { renderCreature as Creature } from '../../creatures/renderCreature'
-import { EndTurn } from '../../events/turnActions'
-import { Card } from '../../cards/card'
-import { resolver } from '../../events/eventResolver'
-import { Button, Row, Col, Shim } from '../../utility'
-import { stream, withState, dispatch } from '../../state'
-import { submitTarget, setFocus, unsetFocus } from '../combatState'
+import { Card } from '../../src/cards/card'
+import { Creature } from '../../src/creatures/creature'
 
 interface SelectingNone {
   type: 'none'
@@ -28,7 +22,7 @@ interface SelectingCreature {
 type Selecting = SelectingNone | SelectingCard | SelectingCreature
 
 export function Battle() {
-  const [selectingCard, set] = useState({ type: 'none' } as Selecting)
+  const [selecting, setSelecting] = useState({ type: 'none' } as Selecting)
 
   return (
     <Col shim>
@@ -91,12 +85,4 @@ const sty = {
     fontSize: '2rem',
     backgroundColor: '#444444',
   },
-}
-
-function tryEndTurn(game) {
-  const player = game.player
-  if (player.inner.isActive) {
-    player.inner.isActive = false
-    resolver.enqueueEvents(new EndTurn(player, player, {}))
-  }
 }

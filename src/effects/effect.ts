@@ -1,8 +1,8 @@
 import { Listener, defineListener } from '../events/listener'
-import { processEvent } from '../events'
 import { bindEffect } from '../events/bindEffect'
 import { EventFactory } from '../events/event'
 import { Effectable } from './effectable'
+import { Interpolation } from '../utils/textTemplate'
 
 export interface SerializedEffect<Data = any> {
   stacks: number
@@ -18,6 +18,9 @@ export interface Effect<Owner = any, Data = {}> extends SerializedEffect<Data> {
 
 export interface EffectFactory<Owner = any, Data = any> {
   (stacks: number, config?: Data): Effect<Owner, Data>
+  readonly type: 'effect-factory'
+  readonly description: Interpolation<Data>
+  readonly name: string
 }
 
 interface StackBehavior {
@@ -52,21 +55,19 @@ export function defineEffect<Owner extends Effectable, Data>(
     appearance?: Appearance
     stackBehavior?: StackBehavior
     data?: Data
-  },
+  } = {},
   ...listeners: ((owner: Owner) => Listener)[]
 ): EffectFactory<Owner, Data> {
   if (config.stackBehavior) {
     const { min, max, delta, stacked, on } = config.stackBehavior
     const listenerFactory = defineListener<Owner, unknown, Owner>(
       `@effect/${name}/stack-behavior`,
-      async ({ subject, dispatch }) => {
+      async ({ subject, processEvent }) => {
         const stacks = subject.stacksOf(factory)
         const change = delta(stacks) - stacks
         if (change) {
-          await dispatch(
-            processEvent(
-              bindEffect(subject, subject, factory(stacks), factory),
-            ),
+          await processEvent(
+            bindEffect(subject, subject, factory(stacks), factory),
           )
         }
       },
@@ -107,6 +108,12 @@ export function defineEffect<Owner extends Effectable, Data>(
   }
 
   effects.set(name, factory)
+
+  const appearance = config.appearance || { name, description: '' }
+
+  factory.type = 'effect-factory' as 'effect-factory'
+  factory.description = appearance.description
+  factory.name = appearance.name
 
   return factory
 }

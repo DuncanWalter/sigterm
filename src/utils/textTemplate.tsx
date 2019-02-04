@@ -1,113 +1,168 @@
 import * as React from 'react'
-import { Transducer } from './transducer'
+import { ReactNode } from 'react'
+import { joinNames } from '../components'
+import { style } from 'typestyle'
+import { EventFactory } from '../events/event'
+import { CardFactory } from '../cards/card'
+import { EffectFactory } from '../effects/effect'
 
-export class Keyword {
-  readonly name: string
-  readonly description: string | TextTemplate<null>
-  constructor(name, description) {
-    this.name = name
-    this.description = description
-  }
+// TODO: Do I use preformatted? I think no...
+
+// types of highlighting:
+
+// none (plain text)
+// number (numbers)
+// variable (effect names)
+// function (this like on-damage & events)
+// const / keyword (game keywords @Singleton, @Default)
+// type (Titles etc)
+
+// `Deal 7 damage. ${onDamage(`Apply 2 ${vulnerable}`)}.`
+// Deal 7 damage. on-damage: Apply 2 vulnerable.
+
+// `Deal 7 damage. ${onDamage(x => `gain ${x} block`)}.`
+// Deal 7 damage. on-damage(x): gain x block.
+
+// `${singleton}. When a card is ${verb(delete, 'deleted')}, gain ${datum('block')} ${block}.`
+// @Singleton. When a card is deleted, gain 4 block.
+
+export interface Template {
+  information: { name: ReactNode; description: ReactNode }[]
+  text: ReactNode
 }
 
-export class TextTemplate<T> {
-  getText: (data: T) => Iterable<never> // TODO: typeof the text nodes...
-  keywords: Keyword[]
-  constructor(getText, keywords) {
-    this.getText = getText
-    this.keywords = keywords
-  }
-}
-
-type Interpolation<T> =
-  | TextTemplate<T>
+export type Interpolation<T> =
+  | Template
   | number
   | string
-  | Keyword
-  | ((data: T) => Interpolation<T>)
+  | ((data: T, defaultData: T) => Interpolation<T>)
+  // | EventFactory
+  | EffectFactory
+  | CardFactory
 
-function* resolveInterpolation<T>(interpolation: Interpolation<T>, data: T) {
+function resolveInterpolation<T>(
+  interpolation: Interpolation<T>,
+  data: T,
+  defaultData: T,
+): Template {
   if (typeof interpolation === 'string') {
-    return yield interpolation
+    return { information: [], text: interpolation }
   } else if (typeof interpolation === 'number') {
-    return yield interpolation
-  } else if (interpolation instanceof Keyword) {
-    return yield <b>{interpolation.name}</b>
-  } else if (interpolation instanceof TextTemplate) {
-    return yield* interpolation.getText(data)
+    return { information: [], text: <p className={numeric}>interpolation</p> }
+  } else if (typeof interpolation === 'function') {
+    // TODO: fix type holes
+    return resolveInterpolation(
+      interpolation(data, defaultData),
+      data,
+      defaultData,
+    )
   } else {
-    return yield* resolveInterpolation(interpolation(data), data)
+    return interpolation
   }
 }
 
 export function template<T>(
   literals: TemplateStringsArray,
-  ...interpolations: (Interpolation<T>)[]
-): TextTemplate<T> {
-  return new TextTemplate(function*(data: T) {
-    let index = 0
-    let finished = false
-    while (!finished) {
-      finished = true
-      if (literals[index]) {
-        finished = false
-        yield literals[index]
-      }
-      if (interpolations[index]) {
-        finished = false
-        yield* resolveInterpolation(interpolations[index], data)
-      }
+  ...interpolations: Interpolation<T>[]
+) {
+  return <U extends T>(data: U, defaultData: U) => {
+    const output = []
+    const foo = interpolations.map(interpolation =>
+      resolveInterpolation(interpolation, data, defaultData),
+    )
+    const information = flatmap(foo, foo => foo.information)
+    for (let i = 0; i < literals.length; i++) {
+      output.push(literals[i])
+      output.push(foo[i].text)
     }
-    index += 1
-  }, new Transducer(interpolations)
-    .filter<Keyword>(token => token instanceof Keyword)
-    .collect())
+    return { information, text: <>{output}</> }
+  }
 }
 
-// export function interpolate<Data: { [string]: any }>(
-//   text: string,
-//   data: Data
-// ): any {
-//   const res = []
-//   const tt = new RegExp(tokenizer, 'g')
+export function keyword(
+  name: string,
+  description: Template | (() => Template),
+): Template {
+  const text = <p className={keywordStyle}>{`@${name}`}</p>
 
-//   let match
-//   while ((match = tt.exec(text))) {
-//     let subs = syntaxes
-//       .filter((syntax) => syntax[0].exec(match[0]) != null)
-//       .map((syntax) => {
-//         let [$0, $1, $2] = syntax[0].exec(match[0])
-//         let ret = syntax[1](data, $1)
-//         return ret
-//       })
-//     // TODO: Why is this matching the safety string? This makes no sense
-//     // regex exec must only put the match index one after the last match or something
-//     res.push(subs[subs.length - 1])
-//   }
-//   return <span>{res}</span>
-// }
+  let effect
+  if (typeof description === 'function') {
+    effect = description()
+  } else {
+    effect = description
+  }
 
-// export function createInterpolationContext<Data: { [string]: any }>(
-//   expected: Data,
-//   resultant: Data,
-//   config: any
-// ): any {
-//   return Object.keys(expected).reduce((acc, key) => {
-//     switch (true) {
-//       // TODO: use normal text color
-//       case expected[key] == resultant[key]: {
-//         acc[key] = <span style={{ color: '#ffffff' }}>{resultant[key]}</span>
-//         break
-//       }
-//       case expected[key] >= resultant[key]: {
-//         acc[key] = <span style={{ color: '#ff3333' }}>{resultant[key]}</span>
-//         break
-//       }
-//       case expected[key] <= resultant[key]: {
-//         acc[key] = <span style={{ color: '#78ff51' }}>{resultant[key]}</span>
-//         break
-//       }
-//     }
-//     return acc
-//   }, {})
-// }
+  const result = {
+    text,
+    information: [
+      {
+        name,
+        description: effect.text,
+      },
+      ...effect.information,
+    ],
+  }
+
+  return result
+}
+
+type NumericKeys<T extends Record<string, any>> = (keyof T) extends infer K
+  ? K extends string ? (T[K] extends number ? K : never) : never
+  : never
+
+export function datum<T>(propName: NumericKeys<T>, covariant: boolean = true) {
+  return (data: T, defaultData: T): Template => {
+    const currentDatum = data[propName]
+    if (typeof currentDatum === 'number') {
+      const net = currentDatum - defaultData[propName]
+      return {
+        information: [],
+        text: (
+          <p
+            className={joinNames(numeric, {
+              [numericGreen]: covariant ? net > 0 : net < 0,
+              [numericRed]: covariant ? net < 0 : net > 0,
+            })}
+          >
+            {currentDatum}
+          </p>
+        ),
+      }
+    } else if (typeof currentDatum === 'string') {
+      return resolveInterpolation(currentDatum, data, defaultData)
+    } else {
+      // TODO: consider styling the fallback more
+      return { information: [], text: <p>??</p> }
+    }
+  }
+}
+
+const numericRed = style({ color: '#dd2222' })
+const numericGreen = style({ color: '#22dd22' })
+
+const verb = style({})
+const noun = style({})
+const title = style({})
+const numeric = style({})
+const background = style({})
+const keywordStyle = style({})
+
+export function createTheme(theme: {
+  verb: string
+  noun: string
+  title: string
+  numeric: string
+  keyword: string
+  background: string
+}) {
+  return style({
+    $nest: {
+      [`&.${verb}`]: { color: theme.verb },
+      [`&.${noun}`]: { color: theme.noun },
+      [`&.${title}`]: { color: theme.title },
+      [`&.${numeric}`]: { color: theme.numeric },
+      [`&.${keywordStyle}`]: { color: theme.keyword },
+      [`&.${background}`]: { color: theme.background },
+    },
+  })
+}

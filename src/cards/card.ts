@@ -1,6 +1,5 @@
 import { Effect, SerializedEffect, cloneEffect } from '../effects/effect'
 import { Dispatch } from '@dwalter/spider-store'
-import { ReactElement } from 'react'
 import {
   dataOf,
   stacksOf,
@@ -9,6 +8,7 @@ import {
 } from '../effects/effectable'
 import { Game } from '../../game/game'
 import { createId } from '../utils/id'
+import { Interpolation } from '../utils/textTemplate'
 
 export type PlayArgs<Data> = {
   actors: Set<unknown>
@@ -20,21 +20,22 @@ export type PlayArgs<Data> = {
 
 interface BaseData {
   energy: 'X' | number | null
-  // keywords: Keyword[]
 }
 
 interface CardDefinition<Data extends BaseData> {
-  title: ((data: Data) => string | ReactElement<any>)
-  text: ((data: Data) => string | ReactElement<any>)
+  title: string
+  text: Interpolation<Data>
   color: string
   effects?: Effect[]
-  // keywords?: Keyword[]
   data: Data
   play(args: PlayArgs<Data>): Promise<Partial<Data>>
 }
 
-interface CardFactory<Data extends BaseData> {
+export interface CardFactory<Data extends BaseData = BaseData> {
   (data?: Partial<Data>, effects?: SerializedEffect<Card>[]): Card<Data>
+  readonly type: 'card-factory'
+  readonly text: Interpolation<Data>
+  readonly title: string
 }
 
 const cards = new Map<
@@ -53,8 +54,8 @@ export interface Card<Data extends BaseData = BaseData> extends Effectable {
   id: number
   name: string
   type: CardFactory<Data>
-  title: ((data: Data) => string | ReactElement<any>)
-  text: ((data: Data) => string | ReactElement<any>)
+  title: string
+  text: Interpolation<Data>
   color: string
 
   data: Data
@@ -98,6 +99,10 @@ export function defineCard<Data extends BaseData>(
     }
   }
 
+  factory.type = 'card-factory' as 'card-factory'
+  factory.text = text
+  factory.title = title
+
   cards.set(name, factory)
 
   return factory
@@ -111,12 +116,8 @@ export function hydrateCard<Data extends BaseData>(card: SerializedCard<Data>) {
 export const cloneCard = hydrateCard
 
 const fallback = defineCard('fallback', {
-  title() {
-    return 'Fallback'
-  },
-  text() {
-    return '.'
-  },
+  title: 'Fallback',
+  text: '.',
   color: '#000000',
   data: { energy: null },
   async play() {
