@@ -85,7 +85,7 @@ const ModalBlock = Material.extend`
   padding: 16px;
 `
 
-export const Modal = (props: any) => (
+export const Modal = props => (
   <ModalWrapper>
     <ModalBlock {...props}>{props.children}</ModalBlock>
   </ModalWrapper>

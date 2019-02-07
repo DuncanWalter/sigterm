@@ -1,12 +1,10 @@
-import * as React from 'react'
+import React from 'react'
 import { render } from 'react-dom'
 
-import { Button } from './components/button'
-import { Text } from './components/text'
+import { Button, Text, DefaultThemeProvider, justifyCenter } from './components'
 
 import { style } from 'typestyle'
 import { SpiderRoot } from '@dwalter/spider-hook'
-// import { createSettableState } from '@dwalter/spider-store'
 
 console.log('Welcome to the Deck Dawdle client')
 
@@ -14,7 +12,7 @@ const anchor = style({
   overflow: 'hidden',
   width: '100vw',
   height: '100vh',
-  backgroundColor: 'black',
+  backgroundColor: '#13131a',
 })
 
 const anchorElement = document.getElementById('anchor')
@@ -22,11 +20,17 @@ const anchorElement = document.getElementById('anchor')
 if (anchorElement) {
   render(
     <SpiderRoot>
-      <div className={anchor}>
-        <Button text="Press Me" onClick={() => alert('woot')} />
-        <Button text="Press Me" primary onClick={() => alert('woot')} />
+      <DefaultThemeProvider>
+        <div className={anchor}>
+          <div className={justifyCenter}>
+            <Text display>SIGTERM</Text>
+            <div>
+              <Button text="Press Me" onClick={() => alert('woot')} />
+              <Button text="Press Me" primary onClick={() => alert('woot')} />
+            </div>
+          </div>
 
-        <Button text="Press Me" large disabled onClick={() => alert('woot')} />
+          {/* <Button text="Press Me" large disabled onClick={() => alert('woot')} />
         <Button text="Press Me" warning onClick={() => alert('woot')} />
 
         <Text large plain>
@@ -37,8 +41,9 @@ if (anchorElement) {
         </Text>
         <Text medium disabled>
           justRight
-        </Text>
-      </div>
+        </Text> */}
+        </div>
+      </DefaultThemeProvider>
     </SpiderRoot>,
     anchorElement,
   )

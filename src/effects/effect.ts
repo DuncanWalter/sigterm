@@ -3,6 +3,7 @@ import { bindEffect } from '../events/bindEffect'
 import { EventFactory } from '../events/event'
 import { Effectable } from './effectable'
 import { Interpolation } from '../utils/textTemplate'
+import { memo } from '../utils/memo'
 
 export interface SerializedEffect<Data = any> {
   stacks: number
@@ -20,7 +21,7 @@ export interface EffectFactory<Owner = any, Data = any> {
   (stacks: number, config?: Data): Effect<Owner, Data>
   readonly type: 'effect-factory'
   readonly description: Interpolation<Data>
-  readonly name: string
+  readonly title: string
 }
 
 interface StackBehavior {
@@ -113,22 +114,11 @@ export function defineEffect<Owner extends Effectable, Data>(
 
   factory.type = 'effect-factory' as 'effect-factory'
   factory.description = appearance.description
-  factory.name = appearance.name
+  factory.title = appearance.name
 
   return factory
 }
 
 // TODO: move to utils
-function memo<A, R>(fun: (a: A) => R) {
-  let lastArg = {} as A
-  let lastRet = {} as R
-  return (a: A) => {
-    if (a === lastArg) {
-      return lastRet
-    } else {
-      return (lastRet = fun((lastArg = a)))
-    }
-  }
-}
 
 const fallback = defineEffect('Fallback', {})

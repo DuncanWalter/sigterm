@@ -3,19 +3,14 @@ import { ReactNode } from 'react'
 import { style } from 'typestyle'
 import { joinNames, justifyBetween, ClassName } from './styles'
 import { Text } from './text'
+import { useTheme } from './theme'
 
-const panel = style({
-  padding: '0 12px 0',
-  borderRadius: 4,
-})
-
-const panelFlush = style({
-  $nest: {
-    [`&.${panel}`]: {
-      padding: 0,
-    },
-  },
-})
+export interface PanelTheme {
+  panel: string
+  flush: string
+  header: string
+  content: string
+}
 
 interface PanelProps {
   className: ClassName
@@ -23,42 +18,79 @@ interface PanelProps {
   flush?: boolean
 }
 
-export function Panel({ children, flush, className }: PanelProps) {
-  return (
-    <div className={joinNames(className, panel, flush && panelFlush)}>
-      {children}
-    </div>
-  )
-}
-
-const panelHeader = style({
-  padding: '24px 12px 24px',
-})
-
 interface PanelHeaderProps {
   className: ClassName
   text: string
   children?: ReactNode
 }
 
-export function PanelHeader({ text, children, className }: PanelHeaderProps) {
+interface PanelContentProps {
+  className: ClassName
+  children: ReactNode
+  flush?: boolean
+}
+
+export function Panel(props: PanelProps) {
+  const { children, className } = props
+  const { panel: theme } = useTheme()
   return (
-    <div className={joinNames(className, justifyBetween, panelHeader)}>
+    <div
+      className={joinNames(className, theme.panel, props.flush && theme.flush)}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function PanelHeader({ text, children, className }: PanelHeaderProps) {
+  const { panel: theme } = useTheme()
+  return (
+    <div className={joinNames(className, justifyBetween, theme.header)}>
       <Text title>{text}</Text>
       <div>{children}</div>
     </div>
   )
 }
 
-const panelContent = style({
+export function PanelContent(props: PanelContentProps) {
+  const { children, className } = props
+  const { panel: theme } = useTheme()
+  return (
+    <div
+      className={joinNames(
+        className,
+        theme.content,
+        props.flush && theme.flush,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+const panel = style({
+  borderRadius: 4,
+})
+
+const header = style({
+  padding: '24px 12px 24px',
+})
+
+const content = style({
   padding: '0 12px 24px',
 })
 
-interface PanelContentProps {
-  className: ClassName
-  children: ReactNode
-}
+const flush = style({
+  $nest: {
+    [`&.${content}`]: {
+      padding: 0,
+    },
+  },
+})
 
-export function PanelContent({ children, className }: PanelContentProps) {
-  return <div className={joinNames(className, panelContent)}>{children}</div>
+export const defaultPanelTheme = {
+  panel,
+  header,
+  content,
+  flush,
 }

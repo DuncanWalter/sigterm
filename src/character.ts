@@ -1,6 +1,24 @@
 // import type { Card } from './cards/card'
 // import type { Pragma } from './pragmas/pragma'
 // import { Sequence } from './utils/random'
+
+// Vincent
+// Eve
+
+// Jekyll
+// "Fish"
+
+// Prometheus
+// Anansi
+
+// Argus?
+
+// "Fish" + Prometheus = Locust
+// Jekyll + "Fish" = Hyde
+// Eve + Jekyll = "Monk"
+// Vincent + Eve = Valentine
+// Anansi + Vincent = "Ironclad"
+
 import { CardPool } from './cards/cardPool'
 
 export const characters: Map<CharacterName, Character> = new Map()

@@ -3,12 +3,21 @@ import * as React from 'react'
 import { Text } from './text'
 import { readOption, ClassName, joinNames } from './styles'
 import { style } from 'typestyle'
+import { useTheme } from './theme'
+
+export interface ButtonTheme {
+  button: string
+  primary: string
+  secondary: string
+  danger: string
+  disabled: string
+}
 
 // TODO: &:focus styles
 
 const types = ['primary', 'secondary', 'danger']
 
-interface ButtonProps {
+export interface ButtonProps {
   className?: ClassName
   disabled?: boolean
   primary?: boolean
@@ -21,19 +30,20 @@ interface ButtonProps {
 }
 
 export function Button(props: ButtonProps) {
-  const { text, onClick, children, className, disabled } = props
+  const { text, onClick, children, className } = props
+  const { button: theme } = useTheme()
   if (children) {
     console.error('Use the "text" prop of Button instead of passing children')
   }
   const type = readOption(types, props, 'secondary')
   return (
     <div
-      onClick={disabled ? undefined : onClick}
-      className={joinNames(button, className, {
-        [buttonPrimary]: type === 'primary',
-        [buttonSecondary]: type === 'secondary',
-        [buttonDanger]: type === 'danger',
-        [buttonDisabled]: disabled,
+      onClick={props.disabled ? undefined : onClick}
+      className={joinNames(theme.button, className, {
+        [theme.primary]: type === 'primary',
+        [theme.secondary]: type === 'secondary',
+        [theme.danger]: type === 'danger',
+        [theme.disabled]: props.disabled,
       })}
     >
       <Text button>{text}</Text>
@@ -47,10 +57,11 @@ const button = style({
   cursor: 'pointer',
   display: 'inline-block',
   padding: '8px 16px 8px',
+  margin: '0 12px 0',
   transition: '0.2s',
 })
 
-const buttonDisabled = style({
+const disabled = style({
   $nest: {
     [`&.${button}`]: {
       backgroundColor: '#9999a3',
@@ -66,7 +77,7 @@ const buttonDisabled = style({
   },
 })
 
-const buttonPrimary = style({
+const primary = style({
   $nest: {
     [`&.${button}`]: {
       backgroundColor: 'rgb(56, 72, 221)',
@@ -79,7 +90,7 @@ const buttonPrimary = style({
   },
 })
 
-const buttonDanger = style({
+const danger = style({
   $nest: {
     [`&.${button}`]: {
       backgroundColor: 'rgb(221, 72, 56)',
@@ -92,7 +103,7 @@ const buttonDanger = style({
   },
 })
 
-const buttonSecondary = style({
+const secondary = style({
   $nest: {
     [`&.${button}`]: {
       color: '#222299',
@@ -105,3 +116,11 @@ const buttonSecondary = style({
     },
   },
 })
+
+export const defaultButtonTheme: ButtonTheme = {
+  button,
+  disabled,
+  primary,
+  secondary,
+  danger,
+}

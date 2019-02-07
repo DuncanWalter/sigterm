@@ -27,15 +27,20 @@ import { EffectFactory } from '../effects/effect'
 // @Singleton. When a card is deleted, gain 4 block.
 
 export interface Template {
-  information: { name: ReactNode; description: ReactNode }[]
+  information: { title: string; description: ReactNode }[]
   text: ReactNode
+}
+
+interface InterpolationThunk<T> {
+  type: undefined
+  (data: T, defaultData: T): Interpolation<T>
 }
 
 export type Interpolation<T> =
   | Template
   | number
   | string
-  | ((data: T, defaultData: T) => Interpolation<T>)
+  | InterpolationThunk<T>
   // | EventFactory
   | EffectFactory
   | CardFactory
@@ -48,14 +53,31 @@ function resolveInterpolation<T>(
   if (typeof interpolation === 'string') {
     return { information: [], text: interpolation }
   } else if (typeof interpolation === 'number') {
-    return { information: [], text: <p className={numeric}>interpolation</p> }
+    return {
+      information: [],
+      text: <p className={theme.numeric}>interpolation</p>,
+    }
   } else if (typeof interpolation === 'function') {
     // TODO: fix type holes
-    return resolveInterpolation(
-      interpolation(data, defaultData),
-      data,
-      defaultData,
-    )
+
+    switch (interpolation.type) {
+      case 'card-factory':
+        return {
+          information: [],
+          text: <p className={theme.noun}>{interpolation.title}</p>,
+        }
+      case 'effect-factory':
+        return {
+          information: [interpolation],
+          text: <p className={theme.noun}>{interpolation.name}</p>,
+        }
+      default:
+        return resolveInterpolation(
+          interpolation(data, defaultData),
+          data,
+          defaultData,
+        )
+    }
   } else {
     return interpolation
   }
@@ -67,23 +89,28 @@ export function template<T>(
 ) {
   return <U extends T>(data: U, defaultData: U) => {
     const output = []
-    const foo = interpolations.map(interpolation =>
+    const resolvedInterpolations = interpolations.map(interpolation =>
       resolveInterpolation(interpolation, data, defaultData),
     )
-    const information = flatmap(foo, foo => foo.information)
+    const information = []
+    for (let interpolation of resolvedInterpolations) {
+      for (let entry of interpolation.information) {
+        information.push(entry)
+      }
+    }
     for (let i = 0; i < literals.length; i++) {
       output.push(literals[i])
-      output.push(foo[i].text)
+      output.push(resolvedInterpolations[i].text)
     }
     return { information, text: <>{output}</> }
   }
 }
 
 export function keyword(
-  name: string,
+  title: string,
   description: Template | (() => Template),
 ): Template {
-  const text = <p className={keywordStyle}>{`@${name}`}</p>
+  const text = <p className={theme.keyword}>{`@${title}`}</p>
 
   let effect
   if (typeof description === 'function') {
@@ -96,7 +123,7 @@ export function keyword(
     text,
     information: [
       {
-        name,
+        title,
         description: effect.text,
       },
       ...effect.information,
@@ -110,7 +137,10 @@ type NumericKeys<T extends Record<string, any>> = (keyof T) extends infer K
   ? K extends string ? (T[K] extends number ? K : never) : never
   : never
 
-export function datum<T>(propName: NumericKeys<T>, covariant: boolean = true) {
+export function datum<K extends string, T extends Record<K, number>>(
+  propName: NumericKeys<T>,
+  covariant: boolean = true,
+) {
   return (data: T, defaultData: T): Template => {
     const currentDatum = data[propName]
     if (typeof currentDatum === 'number') {
@@ -119,7 +149,7 @@ export function datum<T>(propName: NumericKeys<T>, covariant: boolean = true) {
         information: [],
         text: (
           <p
-            className={joinNames(numeric, {
+            className={joinNames(theme.numeric, {
               [numericGreen]: covariant ? net > 0 : net < 0,
               [numericRed]: covariant ? net < 0 : net > 0,
             })}
@@ -128,8 +158,6 @@ export function datum<T>(propName: NumericKeys<T>, covariant: boolean = true) {
           </p>
         ),
       }
-    } else if (typeof currentDatum === 'string') {
-      return resolveInterpolation(currentDatum, data, defaultData)
     } else {
       // TODO: consider styling the fallback more
       return { information: [], text: <p>??</p> }
@@ -140,14 +168,16 @@ export function datum<T>(propName: NumericKeys<T>, covariant: boolean = true) {
 const numericRed = style({ color: '#dd2222' })
 const numericGreen = style({ color: '#22dd22' })
 
-const verb = style({})
-const noun = style({})
-const title = style({})
-const numeric = style({})
-const background = style({})
-const keywordStyle = style({})
+const theme = {
+  verb: style({}),
+  noun: style({}),
+  title: style({}),
+  numeric: style({}),
+  background: style({}),
+  keyword: style({}),
+}
 
-export function createTheme(theme: {
+export function createTheme(colors: {
   verb: string
   noun: string
   title: string
@@ -157,12 +187,12 @@ export function createTheme(theme: {
 }) {
   return style({
     $nest: {
-      [`&.${verb}`]: { color: theme.verb },
-      [`&.${noun}`]: { color: theme.noun },
-      [`&.${title}`]: { color: theme.title },
-      [`&.${numeric}`]: { color: theme.numeric },
-      [`&.${keywordStyle}`]: { color: theme.keyword },
-      [`&.${background}`]: { color: theme.background },
+      [`&.${theme.verb}`]: { color: colors.verb },
+      [`&.${theme.noun}`]: { color: colors.noun },
+      [`&.${theme.title}`]: { color: colors.title },
+      [`&.${theme.numeric}`]: { color: colors.numeric },
+      [`&.${theme.keyword}`]: { color: colors.keyword },
+      [`&.${theme.background}`]: { color: colors.background },
     },
   })
 }

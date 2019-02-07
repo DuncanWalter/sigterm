@@ -1,6 +1,16 @@
 import * as React from 'react'
 import { joinNames, ClassName, readOption } from './styles'
 import { style } from 'typestyle'
+import { useTheme } from './theme'
+
+export interface TextTheme {
+  text: string
+  caption: string
+  body: string
+  button: string
+  title: string
+  display: string
+}
 
 const types = ['body', 'caption', 'display', 'title', 'button']
 
@@ -16,31 +26,19 @@ type TextProps = {
 }
 
 export function Text(props: TextProps) {
-  const { children, className } = props
+  const { text: theme } = useTheme()
   const type = readOption(types, props)
+  const className = joinNames(theme.text, props.className, {
+    [theme.display]: type === 'display',
+    [theme.title]: type === 'title',
+    [theme.body]: type === 'body',
+    [theme.caption]: type === 'caption',
+    [theme.button]: type === 'button',
+  })
   if (type == 'title' || type == 'display') {
-    return (
-      <h1
-        className={joinNames(text, className, {
-          [textDisplay]: type === 'display',
-          [textTitle]: type === 'title',
-        })}
-      >
-        {children}
-      </h1>
-    )
+    return <h1 className={className}>{props.children}</h1>
   } else {
-    return (
-      <p
-        className={joinNames(text, className, {
-          [textBody]: type === 'body',
-          [textCaption]: type === 'caption',
-          [textButton]: type === 'button',
-        })}
-      >
-        {children}
-      </p>
-    )
+    return <p className={className}>{props.children}</p>
   }
 }
 
@@ -52,32 +50,41 @@ const text = style({
   margin: '8px 12px 8px 12px',
 })
 
-const textBody = style({
+const body = style({
   $nest: {
     [`&.${text}`]: { fontSize: 16 },
   },
 })
 
-const textCaption = style({
+const caption = style({
   $nest: {
     [`&.${text}`]: { fontSize: 12 },
   },
 })
 
-const textDisplay = style({
+const display = style({
   $nest: {
     [`&.${text}`]: { fontSize: 88 },
   },
 })
 
-const textTitle = style({
+const title = style({
   $nest: {
     [`&.${text}`]: { fontSize: 44 },
   },
 })
 
-const textButton = style({
+const button = style({
   $nest: {
     [`&.${text}`]: { fontSize: 20 },
   },
 })
+
+export const defaultTextTheme = {
+  text,
+  caption,
+  body,
+  button,
+  title,
+  display,
+}
