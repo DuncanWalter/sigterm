@@ -55,7 +55,7 @@ function resolveInterpolation<T>(
   } else if (typeof interpolation === 'number') {
     return {
       information: [],
-      text: <p className={theme.numeric}>interpolation</p>,
+      text: <p className={textTemplateTheme.numeric}>interpolation</p>,
     }
   } else if (typeof interpolation === 'function') {
     // TODO: fix type holes
@@ -64,12 +64,12 @@ function resolveInterpolation<T>(
       case 'card-factory':
         return {
           information: [],
-          text: <p className={theme.noun}>{interpolation.title}</p>,
+          text: <p className={textTemplateTheme.noun}>{interpolation.title}</p>,
         }
       case 'effect-factory':
         return {
           information: [interpolation],
-          text: <p className={theme.noun}>{interpolation.name}</p>,
+          text: <p className={textTemplateTheme.noun}>{interpolation.name}</p>,
         }
       default:
         return resolveInterpolation(
@@ -110,7 +110,7 @@ export function keyword(
   title: string,
   description: Template | (() => Template),
 ): Template {
-  const text = <p className={theme.keyword}>{`@${title}`}</p>
+  const text = <p className={textTemplateTheme.keyword}>{`@${title}`}</p>
 
   let effect
   if (typeof description === 'function') {
@@ -149,7 +149,7 @@ export function datum<K extends string, T extends Record<K, number>>(
         information: [],
         text: (
           <p
-            className={joinNames(theme.numeric, {
+            className={joinNames(textTemplateTheme.numeric, {
               [numericGreen]: covariant ? net > 0 : net < 0,
               [numericRed]: covariant ? net < 0 : net > 0,
             })}
@@ -168,7 +168,7 @@ export function datum<K extends string, T extends Record<K, number>>(
 const numericRed = style({ color: '#dd2222' })
 const numericGreen = style({ color: '#22dd22' })
 
-const theme = {
+export const textTemplateTheme = {
   verb: style({}),
   noun: style({}),
   title: style({}),
@@ -187,12 +187,12 @@ export function createTheme(colors: {
 }) {
   return style({
     $nest: {
-      [`&.${theme.verb}`]: { color: colors.verb },
-      [`&.${theme.noun}`]: { color: colors.noun },
-      [`&.${theme.title}`]: { color: colors.title },
-      [`&.${theme.numeric}`]: { color: colors.numeric },
-      [`&.${theme.keyword}`]: { color: colors.keyword },
-      [`&.${theme.background}`]: { color: colors.background },
+      [`& .${textTemplateTheme.verb}`]: { color: colors.verb },
+      [`& .${textTemplateTheme.noun}`]: { color: colors.noun },
+      [`& .${textTemplateTheme.title}`]: { color: colors.title },
+      [`& .${textTemplateTheme.numeric}`]: { color: colors.numeric },
+      [`& .${textTemplateTheme.keyword}`]: { color: colors.keyword },
+      [`& .${textTemplateTheme.background}`]: { color: colors.background },
     },
   })
 }

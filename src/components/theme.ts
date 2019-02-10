@@ -2,11 +2,13 @@ import { createContext, useContext } from 'react'
 import { ButtonTheme } from './button'
 import { PanelTheme } from './panel'
 import { TextTheme } from './text'
+import { TooltipTheme } from './tooltip'
 
 export interface Theme {
   button: ButtonTheme
   panel: PanelTheme
   text: TextTheme
+  tooltip: TooltipTheme
 }
 
 /**

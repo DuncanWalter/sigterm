@@ -2,26 +2,22 @@ import { orderConsumers } from './orderConsumers'
 import { Event } from './event'
 
 import { Dispatch, createSettableState } from '@dwalter/spider-store'
-import {
-  createSelector,
-  createSideEffect,
-  wrapThunk,
-} from '@dwalter/spider-hook'
-import { getGame } from '../../game/game'
+import { createSideEffect } from '@dwalter/spider-hook'
+// import { getGame } from '../../game/game'
 
 function name(tag: string) {
   return `@event-resolver/${tag}`
 }
 
-const [getSimulating, setSimulating] = createSettableState(
-  name('simulating'),
-  0,
-)
+// const [getSimulating, setSimulating] = createSettableState(
+//   name('simulating'),
+//   0,
+// )
 
-const [getEventStack, setEventStack] = createSettableState(
-  name('event-stack'),
-  [] as Event[],
-)
+// const [getEventStack, setEventStack] = createSettableState(
+//   name('event-stack'),
+//   [] as Event[],
+// )
 
 export function processEvent<Data extends {}>(event: Event<any, Data>) {
   return wrapThunk((dispatch, resolve) => {
@@ -128,10 +124,10 @@ function enqueueEvent() {}
 
 function nextEvent() {}
 
-const [getEventQueue, setEventQueue] = createSettableState(
-  name('event-queue'),
-  [] as Event[],
-)
+// const [getEventQueue, setEventQueue] = createSettableState(
+//   name('event-queue'),
+//   [] as Event[],
+// )
 
 createSideEffect(getEventStack, (stack, dispatch) => {
   if (!stack.length) {

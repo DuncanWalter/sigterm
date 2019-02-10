@@ -1,7 +1,7 @@
 import { Effect, EffectFactory } from './effect'
 import { Listener } from '../events/listener'
 
-export type Effectable = {
+export interface Effectable {
   effects: Effect[]
   stacksOf(this: Effectable, effect: EffectFactory): number
   getListeners(this: Effectable): Listener[]
