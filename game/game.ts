@@ -1,27 +1,28 @@
-import { createSelector } from '@dwalter/spider-hook'
-import { getPlayerId } from './player'
-import { getEnemyIds } from './enemies'
+import { createSelector, tuple } from '@dwalter/spider-hook'
+import { getPlayer, getEnemies } from './creatures'
+import { Creature } from '../src/creatures/creature'
+import { CardGroup, getDiscard, getDeck, getHand, getDraw } from './cards'
 
 export interface Game {
-  player: number
-  enemies: number[]
-  deck: number[]
-  hand: number[]
-  drawPile: number[]
-  discardPile: number[]
+  player: Creature
+  enemies: Creature[]
+  deck: CardGroup
+  hand: CardGroup
+  drawPile: CardGroup
+  discardPile: CardGroup
   pragmas: number[]
 }
 
 export const getGame = createSelector(
-  [getPlayerId, getEnemyIds],
-  (playerId, enemyIds): Game => {
+  tuple(getPlayer, getEnemies, getHand, getDeck, getDiscard, getDraw),
+  (player, enemies, hand, deck, discardPile, drawPile): Game => {
     return {
-      player: playerId,
-      enemies: enemyIds,
-      deck: [],
-      hand: [],
-      drawPile: [],
-      discardPile: [],
+      player,
+      enemies,
+      deck,
+      hand,
+      drawPile,
+      discardPile,
       pragmas: [],
     }
   },

@@ -1,12 +1,10 @@
 import { Card } from '../cards/card'
 import { defineEvent } from './event'
+import { CardGroup } from '../../game/cards'
 
-export const RemoveCard = defineEvent<Card, { from: Card[] }>(
+export const removeCard = defineEvent<Card, { from: CardGroup }>(
   '@remove-card',
-  async ({ dispatch, data: { from }, subject }) => {
-    if (from.find(card => card === subject)) {
-      const index = from.indexOf(subject)
-      // TODO:
-    }
+  async ({ dispatch, data: { from: cardGroup }, subject }) => {
+    dispatch(cardGroup.remove(subject))
   },
 )

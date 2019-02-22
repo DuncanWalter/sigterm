@@ -10,14 +10,8 @@ export const RemoveCreature = defineEvent<Creature, {}>(
   'removeCreature',
   async ({ game, actors, subject, cancel }) => {
     let index
-    console.log(subject)
-    console.log('killing... something...', game.enemies)
-    console.log(game.enemies.entities.includes(subject))
-    console.log(
-      game.enemies.entities.map(enemy => enemy.id).includes(subject.id),
-    )
     switch (true) {
-      case game.player == subject: {
+      case game.player.id == subject.id: {
         // rip
         pushEvents(new EndCombat(actors, subject, {}))
         return cancel()
@@ -30,10 +24,6 @@ export const RemoveCreature = defineEvent<Creature, {}>(
           pushEvents(new EndCombat(actors, subject, {}))
         }
         return cancel()
-      }
-      case game.allies.includes(subject): {
-        game.allies.remove(subject)
-        break
       }
     }
   },

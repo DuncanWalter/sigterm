@@ -2,22 +2,12 @@ import { orderConsumers } from './orderConsumers'
 import { Event } from './event'
 
 import { Dispatch, createSettableState } from '@dwalter/spider-store'
-import { createSideEffect } from '@dwalter/spider-hook'
-// import { getGame } from '../../game/game'
+import { createSideEffect, wrapThunk } from '@dwalter/spider-hook'
+import { getGame } from '../../game/game'
 
-function name(tag: string) {
-  return `@event-resolver/${tag}`
-}
+const [getSimulating, setSimulating] = createSettableState(0)
 
-// const [getSimulating, setSimulating] = createSettableState(
-//   name('simulating'),
-//   0,
-// )
-
-// const [getEventStack, setEventStack] = createSettableState(
-//   name('event-stack'),
-//   [] as Event[],
-// )
+const [getEventStack, setEventStack] = createSettableState([] as Event[])
 
 export function processEvent<Data extends {}>(event: Event<any, Data>) {
   return wrapThunk((dispatch, resolve) => {

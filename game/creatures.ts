@@ -1,30 +1,53 @@
-import { createSettableState } from '@dwalter/spider-store'
 import { Creature } from '../src/creatures/creature'
-import { destroyId } from '../src/utils/id'
+import { createSelector, tuple, wrapThunk } from '@dwalter/spider-hook'
+import {
+  createReducer,
+  entityTable,
+  settable,
+  arraylike,
+} from '@dwalter/create-reducer'
 
-const [getCreatures, setCreatures] = createSettableState(
-  '@creatures',
-  new Map<number, Creature>(),
-  false,
+const [getCreatures, creatureActions] = createReducer(
+  'creature',
+  {},
+  entityTable<Creature>(creature => creature.id),
 )
 
-export { getCreatures }
+const [getPlayerId, playerIdActions] = createReducer('player', NaN, {
+  ...settable<number>(),
+})
 
-export function updateCreatures() {
-  return setCreatures(creatures => creatures)
+const [getEnemyIds, enemyIdsActions] = createReducer('enemies', [], {
+  ...arraylike<number>(),
+})
+
+export function addEnemy(enemy: Creature) {
+  return [creatureActions.add(enemy), enemyIdsActions.add(enemy.id)]
 }
 
-export function destroyCreature(creature: Creature) {
-  return setCreatures(creatures => {
-    creatures.delete(creature.id)
-    destroyId(creature.id)
-    return creatures
+export function removeEnemy(enemy: Creature) {
+  return [creatureActions.remove(enemy), enemyIdsActions.remove(enemy.id)]
+}
+
+export function setPlayer(player: Creature) {
+  return wrapThunk((dispatch, resolve) => {
+    const playerId = resolve(getPlayerId)
+    dispatch([
+      creatureActions.delete(playerId),
+      creatureActions.add(player),
+      playerIdActions.set(player.id),
+    ])
   })
 }
 
-export function addCreature(creature: Creature) {
-  return setCreatures(creatures => {
-    creatures.set(creature.id, creature)
-    return creatures
-  })
-}
+export const updateCreature = creatureActions.update
+
+export const getPlayer = createSelector(
+  tuple(getCreatures, getPlayerId),
+  (creatures, playerId) => creatures[playerId].entity,
+)
+
+export const getEnemies = createSelector(
+  tuple(getCreatures, getEnemyIds),
+  (creatures, enemyIds) => enemyIds.map(enemyId => creatures[enemyId].entity),
+)
